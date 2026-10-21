@@ -609,10 +609,12 @@ function GoogleMap({
   list,
   selected,
   onSelect,
+  filterKey,
 }: {
   list: Pothole[]
   selected?: Pothole
   onSelect: (p: Pothole) => void
+  filterKey?: string
 }) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map>(null)
@@ -635,7 +637,14 @@ function GoogleMap({
     L.control.zoom({ position: "topright" }).addTo(m)
     map.current = m
     layer.current = L.layerGroup().addTo(m)
+
+    const ro = new ResizeObserver(() => {
+      m.invalidateSize()
+    })
+    ro.observe(el.current)
+
     return () => {
+      ro.disconnect()
       m.remove()
     }
   }, [])
@@ -662,11 +671,11 @@ function GoogleMap({
       const sevClass = `sev-${p.severity.toLowerCase()}`
       const icon = L.divIcon({
         className: "pothole-bubble-icon",
-        iconSize: [56, 56],
-        iconAnchor: [28, 28],
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
         html: `<div class="pothole-bubble-wrapper ${
           s ? "is-selected" : ""
-        } ${sevClass}" style="--c:${SEV[p.severity]};--d:${delay}s"><div class="bubble-halo"></div><div class="bubble-ripple ripple-1"></div><div class="bubble-ripple ripple-2"></div><div class="bubble-ripple ripple-3"></div><div class="bubble-dot"></div></div>`,
+        } ${sevClass}" style="--c:${SEV[p.severity]};--d:${delay}s"><div class="bubble-halo"></div><div class="bubble-ripple ripple-1"></div><div class="bubble-ripple ripple-2"></div><div class="bubble-ripple ripple-3"></div><div class="bubble-dot"></div><div class="bubble-hitarea"></div></div>`,
       })
       L.marker([p.lat, p.lng], {
         icon,
@@ -680,21 +689,29 @@ function GoogleMap({
             <span style="color:#4b4b4b;">${p.road}, ${p.ward}</span><br/>
             <span style="color:#2d2d2d;font-size:11px;">Depth: ${p.depth} cm · Area: ${p.size} m²</span>
           </div>`,
-          { direction: "top", offset: [0, -16] },
+          { direction: "top", offset: [0, -18] },
         )
         .on("click", () => onSelect(p))
         .addTo(g)
     })
   }, [list, selected, onSelect])
 
+  const lastKey = useRef(filterKey)
+  const hasInitialFit = useRef(false)
+
   useEffect(() => {
-    if (list.length && !selected && map.current) {
-      map.current.fitBounds(L.latLngBounds(list.map((p) => [p.lat, p.lng])), {
-        padding: [32, 32],
-        maxZoom: 13,
-      })
+    if (!map.current || !list.length) return
+    if (!hasInitialFit.current || filterKey !== lastKey.current) {
+      hasInitialFit.current = true
+      lastKey.current = filterKey
+      if (!selected) {
+        map.current.fitBounds(L.latLngBounds(list.map((p) => [p.lat, p.lng])), {
+          padding: [32, 32],
+          maxZoom: 13,
+        })
+      }
     }
-  }, [list])
+  }, [list, filterKey, selected])
 
   useEffect(() => {
     if (selected && map.current) {
@@ -750,7 +767,10 @@ function DetectionPage() {
       ),
     [q],
   )
-  const list = sev === "All" ? base : base.filter((p) => p.severity === sev)
+  const list = useMemo(
+    () => (sev === "All" ? base : base.filter((p) => p.severity === sev)),
+    [base, sev],
+  )
 
   const selectPin = useMemo(
     () => (p: Pothole) => {
@@ -853,7 +873,12 @@ function DetectionPage() {
           {viewMode === "split" && (
             <div className="w-full lg:w-[40%] flex flex-col gap-3 lg:sticky lg:top-20">
               <div className="relative h-[460px] lg:h-[calc(100vh-290px)] lg:min-h-[420px] w-full overflow-hidden rounded-xl border border-[#e4e4e4] bg-white shadow-sm">
-                <GoogleMap list={list} selected={selected} onSelect={selectPin} />
+                <GoogleMap
+                  list={list}
+                  selected={selected}
+                  onSelect={selectPin}
+                  filterKey={`${sev}_${q}`}
+                />
               </div>
 
               {/* Quick Selection Banner below map */}
