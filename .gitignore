@@ -19,4 +19,4 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
-.vercel/
+.vercel
