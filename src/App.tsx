@@ -78,12 +78,12 @@ type User = {
 }
 
 const ZONES = [
-  { id: 1, name: "Zone 1 · Civil Lines", cx: 170, cy: 120 },
-  { id: 2, name: "Zone 2 · Kalyanpur", cx: 380, cy: 115 },
-  { id: 3, name: "Zone 3 · Kidwai Nagar", cx: 565, cy: 150 },
-  { id: 4, name: "Zone 4 · Govind Nagar", cx: 190, cy: 270 },
-  { id: 5, name: "Zone 5 · Kakadeo", cx: 400, cy: 260 },
-  { id: 6, name: "Zone 6 · Chakeri", cx: 565, cy: 290 },
+  { id: 1, name: "Zone 1 · Civil Lines", lat: 26.4745, lng: 80.3485, cx: 170, cy: 120 },
+  { id: 2, name: "Zone 2 · Kalyanpur", lat: 26.4950, lng: 80.2620, cx: 380, cy: 115 },
+  { id: 3, name: "Zone 3 · Kidwai Nagar", lat: 26.4350, lng: 80.3360, cx: 565, cy: 150 },
+  { id: 4, name: "Zone 4 · Govind Nagar", lat: 26.4420, lng: 80.2840, cx: 190, cy: 270 },
+  { id: 5, name: "Zone 5 · Kakadeo", lat: 26.4800, lng: 80.3060, cx: 400, cy: 260 },
+  { id: 6, name: "Zone 6 · Chakeri", lat: 26.4320, lng: 80.4060, cx: 565, cy: 290 },
 ]
 
 const ROADS = [
@@ -111,9 +111,14 @@ function rand(seed: number) {
 }
 function inZone(z: number, i: number) {
   const c = ZONES[z - 1]
+  // Tight cluster around zone's street roads in Kanpur (radius ~300m - 900m)
+  const latOffset = (rand(i + 47) - 0.5) * 0.016
+  const lngOffset = (rand(i + 13) - 0.5) * 0.022
   return {
     x: c.cx + (rand(i) - 0.5) * 120,
     y: c.cy + (rand(i + 99) - 0.5) * 90,
+    lat: +(c.lat + latOffset).toFixed(5),
+    lng: +(c.lng + lngOffset).toFixed(5),
   }
 }
 
@@ -129,8 +134,8 @@ const POTHOLES: Pothole[] = Array.from({ length: 64 }, (_, i) => {
     road: ROADS[Math.floor(rand(i + 11) * ROADS.length)],
     x: p.x,
     y: p.y,
-    lat: 26.4499 + (p.y - 200) / -4000,
-    lng: 80.3319 + (p.x - 350) / 3000,
+    lat: p.lat,
+    lng: p.lng,
     severity,
     confidence: Math.round(72 + rand(i + 5) * 27),
     size: +(0.2 + rand(i + 2) * 2.4).toFixed(2),
@@ -620,7 +625,13 @@ function GoogleMap({
     const m = L.map(el.current, {
       zoomControl: false,
       attributionControl: true,
-    }).setView([26.4499, 80.3319], 12)
+      minZoom: 11,
+      maxZoom: 18,
+    }).setView([26.4600, 80.3320], 12.5)
+    m.setMaxBounds([
+      [26.35, 80.15],
+      [26.58, 80.52],
+    ])
     L.control.zoom({ position: "topright" }).addTo(m)
     map.current = m
     layer.current = L.layerGroup().addTo(m)
@@ -679,8 +690,8 @@ function GoogleMap({
   useEffect(() => {
     if (list.length && !selected && map.current) {
       map.current.fitBounds(L.latLngBounds(list.map((p) => [p.lat, p.lng])), {
-        padding: [36, 36],
-        maxZoom: 14,
+        padding: [32, 32],
+        maxZoom: 13,
       })
     }
   }, [list])
