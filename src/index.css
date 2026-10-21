@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&family=Noto+Sans+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  /* PGR Design System — Primary (blue) */
+  --color-primary-50: #f6f8fe;
+  --color-primary-100: #dee8fc;
+  --color-primary-200: #bbcff9;
+  --color-primary-300: #2563eb;
+  --color-primary-400: #1e4fbc;
+  --color-primary-500: #163b8d;
+  --color-primary-600: #0d2352;
+
+  /* PGR Design System — Teal/Green */
+  --color-pgr-teal-50: #eef6f5;
+  --color-pgr-teal-100: #dbece9;
+  --color-pgr-teal-200: #b5d8d1;
+  --color-pgr-teal-300: #11806a;
+  --color-pgr-teal-400: #0e6655;
+  --color-pgr-teal-500: #0a4d40;
+  --color-pgr-teal-600: #062d25;
+
+  /* PGR Design System — Yellow */
+  --color-pgr-yellow-50: #fef9f1;
+  --color-pgr-yellow-100: #fbf1d9;
+  --color-pgr-yellow-200: #f7e1b0;
+  --color-pgr-yellow-300: #e69f00;
+  --color-pgr-yellow-400: #b87f00;
+  --color-pgr-yellow-500: #8a5f00;
+  --color-pgr-yellow-600: #513800;
+
+  /* PGR Design System — Red */
+  --color-pgr-red-50: #fcf3f4;
+  --color-pgr-red-100: #f6dfe1;
+  --color-pgr-red-200: #edbcc2;
+  --color-pgr-red-300: #c62839;
+  --color-pgr-red-400: #9e202e;
+  --color-pgr-red-500: #771822;
+  --color-pgr-red-600: #450e14;
+
+  /* PGR Design System — Grey */
+  --color-pgr-grey-50: #fafafa;
+  --color-pgr-grey-100: #e4e4e4;
+  --color-pgr-grey-200: #c7c7c7;
+  --color-pgr-grey-300: #4b4b4b;
+  --color-pgr-grey-400: #3c3c3c;
+  --color-pgr-grey-500: #2d2d2d;
+  --color-pgr-grey-600: #1a1a1a;
+
+  --font-sans: 'Noto Sans', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Noto Sans Mono', ui-monospace, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #fafafa;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Strictly regular and medium font weights only — no bold or semibold anywhere */
+b, strong, th, h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+}
+
+/* Pulsing pothole detection markers — small circles with pulse effect animation */
+.ph-pin {
+  position: relative;
+  width: 0;
+  height: 0;
+  cursor: pointer;
+}
+.ph-pin i,
+.ph-pin span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+}
+.ph-pin i {
+  width: 12px;
+  height: 12px;
+  background: var(--c);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 2;
+}
+.ph-pin:hover i {
+  transform: translate(-50%, -50%) scale(1.3);
+}
+.ph-pin span {
+  width: 12px;
+  height: 12px;
+  background: var(--c);
+  opacity: 0;
+  animation: ph-pulse 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  animation-delay: var(--d, 0s);
+  z-index: 1;
+}
+.ph-pin span + span {
+  animation-delay: calc(var(--d, 0s) + 1.1s);
+}
+.ph-sel i {
+  width: 18px;
+  height: 18px;
+  border-width: 2.5px;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%) scale(1.15);
+}
+.ph-sel span {
+  animation-duration: 1.4s;
+}
+@keyframes ph-pulse {
+  0% {
+    width: 12px;
+    height: 12px;
+    opacity: 0.85;
+  }
+  70% {
+    width: 34px;
+    height: 34px;
+    opacity: 0.18;
+  }
+  100% {
+    width: 44px;
+    height: 44px;
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ph-pin span {
+    animation: none;
+  }
+}
+
+/* Dark theme — PGR Design System dark mode mappings */
+.dark .bg-white { background-color: #2d2d2d; }
+.dark .bg-white\/95 { background-color: rgb(45 45 45 / 0.95); }
+.dark .bg-\[\#fafafa\], .dark .hover\:bg-\[\#fafafa\]:hover { background-color: #1a1a1a; }
+.dark .text-\[\#1a1a1a\], .dark .hover\:text-\[\#1a1a1a\]:hover { color: #fafafa; }
+.dark .text-\[\#2d2d2d\] { color: #e4e4e4; }
+.dark .text-\[\#3c3c3c\] { color: #c7c7c7; }
+.dark .text-\[\#4b4b4b\] { color: #a1a1a1; }
+.dark .border-\[\#e4e4e4\], .dark .divide-\[\#e4e4e4\] > * { border-color: #3c3c3c; }
+.dark .border-\[\#c7c7c7\] { border-color: #4b4b4b; }
+.dark .bg-primary-50\/60, .dark .bg-primary-50\/80, .dark .bg-primary-50\/90, .dark .bg-primary-50\/70 { background-color: rgb(13 35 82 / 0.55); }
+.dark .bg-primary-100 { background-color: #0d2352; }
+.dark .border-primary-200 { border-color: #1e4fbc; }
+.dark .text-primary-500 { color: #bbcff9; }
+.dark input, .dark select { background-color: #1a1a1a; }
+
+/* Material Design Ripple Effect */
+button:not(.no-ripple),
+[role="button"]:not(.no-ripple) {
+  position: relative;
+  overflow: hidden;
+}
+
+.material-ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  background-color: currentColor;
+  opacity: 0.18;
+  animation: material-ripple-grow 450ms cubic-bezier(0, 0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.material-ripple-fade-out {
+  animation: material-ripple-fade 350ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes material-ripple-grow {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes material-ripple-fade {
+  from {
+    opacity: 0.18;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .material-ripple {
+    animation-duration: 0.01ms;
+  }
+}
+

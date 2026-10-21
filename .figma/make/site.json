@@ -1,0 +1,10 @@
+{
+  "description": "Provides system admins with a dashboard to monitor pothole detections on a map, manage employee access, and assign user wards or zones efficiently.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
