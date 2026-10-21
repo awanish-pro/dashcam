@@ -63,75 +63,173 @@ b, strong, th, h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
 }
 
-/* Pulsing pothole detection markers — small circles with pulse effect animation */
-.ph-pin {
-  position: relative;
-  width: 0;
-  height: 0;
-  cursor: pointer;
+/* Pothole detection bubbles with ripple effect animation on GIS map */
+.pothole-bubble-icon,
+.leaflet-div-icon.pothole-bubble-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
-.ph-pin i,
-.ph-pin span {
+
+.pothole-bubble-wrapper {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* 1. Visible semi-transparent Detection Bubble / Halo on the street */
+.pothole-bubble-wrapper .bubble-halo {
   position: absolute;
-  left: 50%;
   top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
   border-radius: 9999px;
   transform: translate(-50%, -50%);
-}
-.ph-pin i {
-  width: 12px;
-  height: 12px;
-  background: var(--c);
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  z-index: 2;
-}
-.ph-pin:hover i {
-  transform: translate(-50%, -50%) scale(1.3);
-}
-.ph-pin span {
-  width: 12px;
-  height: 12px;
-  background: var(--c);
-  opacity: 0;
-  animation: ph-pulse 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  background-color: var(--c);
+  opacity: 0.30;
+  border: 1px solid var(--c);
+  box-shadow: 0 0 12px var(--c);
+  pointer-events: none;
+  transition: transform 0.25s ease, opacity 0.25s ease, width 0.25s ease, height 0.25s ease;
+  animation: bubble-halo-pulse 3.2s ease-in-out infinite;
   animation-delay: var(--d, 0s);
   z-index: 1;
 }
-.ph-pin span + span {
-  animation-delay: calc(var(--d, 0s) + 1.1s);
+
+/* Severity-based halo dimensions */
+.pothole-bubble-wrapper.sev-high .bubble-halo {
+  width: 52px;
+  height: 52px;
+  opacity: 0.35;
 }
-.ph-sel i {
-  width: 18px;
-  height: 18px;
-  border-width: 2.5px;
-  border-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
+.pothole-bubble-wrapper.sev-medium .bubble-halo {
+  width: 46px;
+  height: 46px;
+  opacity: 0.32;
+}
+.pothole-bubble-wrapper.sev-low .bubble-halo {
+  width: 42px;
+  height: 42px;
+  opacity: 0.30;
+}
+
+/* 2. Concentric expanding ripple waves */
+.pothole-bubble-wrapper .bubble-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--c);
+  background-color: var(--c);
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform, opacity;
+}
+
+.pothole-bubble-wrapper .bubble-ripple.ripple-1 {
+  animation: pothole-wave-expand 2.6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
+  animation-delay: var(--d, 0s);
+}
+
+.pothole-bubble-wrapper .bubble-ripple.ripple-2 {
+  animation: pothole-wave-expand 2.6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
+  animation-delay: calc(var(--d, 0s) + 0.85s);
+}
+
+.pothole-bubble-wrapper .bubble-ripple.ripple-3 {
+  animation: pothole-wave-expand 2.6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
+  animation-delay: calc(var(--d, 0s) + 1.7s);
+}
+
+/* 3. Center pothole marker dot with crisp white border */
+.pothole-bubble-wrapper .bubble-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  border-radius: 9999px;
+  background-color: var(--c);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  z-index: 4;
+}
+
+/* Hover interactions */
+.pothole-bubble-wrapper:hover .bubble-dot {
+  transform: translate(-50%, -50%) scale(1.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+
+.pothole-bubble-wrapper:hover .bubble-halo {
+  opacity: 0.46;
   transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 0 16px var(--c);
 }
-.ph-sel span {
-  animation-duration: 1.4s;
+
+/* Selected state */
+.pothole-bubble-wrapper.is-selected .bubble-dot {
+  width: 17px;
+  height: 17px;
+  border-width: 2.5px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.85), 0 3px 12px rgba(0, 0, 0, 0.45);
+  transform: translate(-50%, -50%) scale(1.1);
 }
-@keyframes ph-pulse {
+
+.pothole-bubble-wrapper.is-selected .bubble-halo {
+  width: 62px;
+  height: 62px;
+  opacity: 0.52;
+  border-width: 2px;
+  box-shadow: 0 0 20px var(--c);
+}
+
+/* Keyframes for Ripple Effect */
+@keyframes pothole-wave-expand {
   0% {
-    width: 12px;
-    height: 12px;
-    opacity: 0.85;
+    width: 14px;
+    height: 14px;
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0.6);
   }
-  70% {
-    width: 34px;
-    height: 34px;
-    opacity: 0.18;
+  40% {
+    opacity: 0.35;
   }
   100% {
-    width: 44px;
-    height: 44px;
+    width: 72px;
+    height: 72px;
     opacity: 0;
+    transform: translate(-50%, -50%) scale(1.2);
   }
 }
+
+/* Keyframes for Bubble Halo breathing */
+@keyframes bubble-halo-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.30;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.06);
+    opacity: 0.38;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ph-pin span {
+  .pothole-bubble-wrapper .bubble-ripple,
+  .pothole-bubble-wrapper .bubble-halo {
     animation: none;
   }
 }

@@ -359,7 +359,10 @@ const IMGS = [
 ]
 const img = (i: number, w = 400) =>
   `https://images.unsplash.com/photo-${IMGS[i % IMGS.length]}?auto=format&fit=crop&w=${w}&h=${Math.round(w * 0.75)}&q=70`
-const idx = (p: Pothole) => POTHOLES.indexOf(p)
+const idx = (p: Pothole) => {
+  const i = POTHOLES.findIndex((x) => x.id === p.id)
+  return i >= 0 ? i : 0
+}
 const WARDS = (z: number) =>
   Array.from(
     { length: 6 },
@@ -644,12 +647,15 @@ function GoogleMap({
     g.clearLayers()
     list.forEach((p) => {
       const s = selected?.id === p.id
+      const delay = ((idx(p) % 8) * 0.35).toFixed(2)
+      const sevClass = `sev-${p.severity.toLowerCase()}`
       const icon = L.divIcon({
-        className: "",
-        iconSize: [0, 0],
-        html: `<div class="ph-pin${
-          s ? " ph-sel" : ""
-        }" style="--c:${SEV[p.severity]};--d:${(idx(p) % 8) * 0.25}s"><span></span><span></span><i></i></div>`,
+        className: "pothole-bubble-icon",
+        iconSize: [56, 56],
+        iconAnchor: [28, 28],
+        html: `<div class="pothole-bubble-wrapper ${
+          s ? "is-selected" : ""
+        } ${sevClass}" style="--c:${SEV[p.severity]};--d:${delay}s"><div class="bubble-halo"></div><div class="bubble-ripple ripple-1"></div><div class="bubble-ripple ripple-2"></div><div class="bubble-ripple ripple-3"></div><div class="bubble-dot"></div></div>`,
       })
       L.marker([p.lat, p.lng], {
         icon,
@@ -663,7 +669,7 @@ function GoogleMap({
             <span style="color:#4b4b4b;">${p.road}, ${p.ward}</span><br/>
             <span style="color:#2d2d2d;font-size:11px;">Depth: ${p.depth} cm · Area: ${p.size} m²</span>
           </div>`,
-          { direction: "top", offset: [0, -8] },
+          { direction: "top", offset: [0, -16] },
         )
         .on("click", () => onSelect(p))
         .addTo(g)
