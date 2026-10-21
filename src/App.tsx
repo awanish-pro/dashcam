@@ -95,7 +95,72 @@ const ROADS = [
   "Naveen Market Rd",
   "Swaroop Nagar Rd",
   "Jajmau Rd",
-]
+] as const
+
+const ROAD_PATHS: Record<string, [number, number][]> = {
+  "GT Road": [
+    [26.4980, 80.2580],
+    [26.4920, 80.2750],
+    [26.4850, 80.2950],
+    [26.4780, 80.3120],
+    [26.4680, 80.3320],
+    [26.4520, 80.3600],
+    [26.4380, 80.3880],
+    [26.4250, 80.4180],
+  ],
+  "Mall Road": [
+    [26.4765, 80.3320],
+    [26.4740, 80.3410],
+    [26.4720, 80.3500],
+    [26.4695, 80.3590],
+    [26.4660, 80.3680],
+  ],
+  "VIP Road": [
+    [26.4890, 80.3250],
+    [26.4850, 80.3380],
+    [26.4810, 80.3520],
+    [26.4760, 80.3650],
+  ],
+  "Kalpi Road": [
+    [26.4720, 80.3150],
+    [26.4610, 80.3010],
+    [26.4490, 80.2850],
+    [26.4380, 80.2680],
+  ],
+  "Hamirpur Road": [
+    [26.4520, 80.3370],
+    [26.4410, 80.3350],
+    [26.4300, 80.3330],
+    [26.4180, 80.3310],
+  ],
+  "Naveen Market Rd": [
+    [26.4755, 80.3430],
+    [26.4735, 80.3475],
+    [26.4715, 80.3515],
+  ],
+  "Swaroop Nagar Rd": [
+    [26.4860, 80.3010],
+    [26.4830, 80.3100],
+    [26.4795, 80.3210],
+  ],
+  "Jajmau Rd": [
+    [26.4430, 80.3920],
+    [26.4360, 80.4040],
+    [26.4270, 80.4180],
+  ],
+}
+
+const ROAD_ZONES: Record<string, number> = {
+  "GT Road": 2,
+  "Mall Road": 1,
+  "VIP Road": 1,
+  "Kalpi Road": 4,
+  "Hamirpur Road": 3,
+  "Naveen Market Rd": 1,
+  "Swaroop Nagar Rd": 5,
+  "Jajmau Rd": 6,
+}
+
 const ENGINEERS = [
   "A. Verma",
   "R. Mishra",
@@ -109,33 +174,96 @@ function rand(seed: number) {
   const x = Math.sin(seed * 9301 + 49297) * 233280
   return x - Math.floor(x)
 }
-function inZone(z: number, i: number) {
-  const c = ZONES[z - 1]
-  // Tight cluster around zone's street roads in Kanpur (radius ~300m - 900m)
-  const latOffset = (rand(i + 47) - 0.5) * 0.016
-  const lngOffset = (rand(i + 13) - 0.5) * 0.022
-  return {
-    x: c.cx + (rand(i) - 0.5) * 120,
-    y: c.cy + (rand(i + 99) - 0.5) * 90,
-    lat: +(c.lat + latOffset).toFixed(5),
-    lng: +(c.lng + lngOffset).toFixed(5),
-  }
+
+function pointOnRoad(roadName: string, t: number, seed: number): [number, number] {
+  const pts = ROAD_PATHS[roadName] || ROAD_PATHS["Mall Road"]
+  if (pts.length === 1) return pts[0]
+  const totalSegments = pts.length - 1
+  const clampedT = Math.max(0, Math.min(0.9999, t))
+  const segIndex = Math.floor(clampedT * totalSegments)
+  const segT = clampedT * totalSegments - segIndex
+  const p1 = pts[segIndex]
+  const p2 = pts[segIndex + 1]
+  const latOffset = (rand(seed + 19) - 0.5) * 0.00045
+  const lngOffset = (rand(seed + 31) - 0.5) * 0.00045
+  const lat = p1[0] + (p2[0] - p1[0]) * segT + latOffset
+  const lng = p1[1] + (p2[1] - p1[1]) * segT + lngOffset
+  return [+lat.toFixed(5), +lng.toFixed(5)]
+}
+
+export type RoadSummary = {
+  name: string
+  points: [number, number][]
+  totalCount: number
+  highCount: number
+  medCount: number
+  lowCount: number
+  dominantSeverity: Severity
+  color: string
+  center: [number, number]
+}
+
+function computeRoadSummaries(potholes: Pothole[]): Record<string, RoadSummary> {
+  const result: Record<string, RoadSummary> = {}
+  ROADS.forEach((roadName) => {
+    const list = potholes.filter((p) => p.road === roadName)
+    const points = ROAD_PATHS[roadName] || []
+    const highCount = list.filter((p) => p.severity === "High").length
+    const medCount = list.filter((p) => p.severity === "Medium").length
+    const lowCount = list.filter((p) => p.severity === "Low").length
+    const totalCount = list.length
+
+    let dominantSeverity: Severity = "Low"
+    if (highCount >= 2 || (highCount >= 1 && totalCount >= 4 && highCount / totalCount >= 0.25)) {
+      dominantSeverity = "High"
+    } else if (medCount >= 2 || highCount >= 1) {
+      dominantSeverity = "Medium"
+    } else {
+      dominantSeverity = "Low"
+    }
+
+    const midIdx = Math.floor(points.length / 2)
+    const center = points[midIdx] || [26.46, 80.33]
+
+    result[roadName] = {
+      name: roadName,
+      points,
+      totalCount,
+      highCount,
+      medCount,
+      lowCount,
+      dominantSeverity,
+      color: SEV[dominantSeverity],
+      center,
+    }
+  })
+  return result
 }
 
 const POTHOLES: Pothole[] = Array.from({ length: 64 }, (_, i) => {
-  const zone = (i % 6) + 1
-  const p = inZone(zone, i)
+  const road = ROADS[i % ROADS.length]
   const r = rand(i + 7)
-  const severity: Severity = r > 0.7 ? "High" : r > 0.35 ? "Medium" : "Low"
+  const isHighRoad = road === "GT Road" || road === "Mall Road" || road === "Jajmau Rd"
+  const isMedRoad = road === "Hamirpur Road" || road === "Kalpi Road" || road === "Swaroop Nagar Rd"
+  let severity: Severity = "Low"
+  if (isHighRoad) {
+    severity = r > 0.35 ? "High" : r > 0.15 ? "Medium" : "Low"
+  } else if (isMedRoad) {
+    severity = r > 0.82 ? "High" : r > 0.35 ? "Medium" : "Low"
+  } else {
+    severity = r > 0.95 ? "High" : r > 0.75 ? "Medium" : "Low"
+  }
+  const pos = pointOnRoad(road, rand(i * 3 + 1), i)
+  const zone = ROAD_ZONES[road] || ((i % 6) + 1)
   return {
     id: `PH-KNP-${String(2400 + i * 7).padStart(5, "0")}`,
     zone,
     ward: `W-${String(zone * 18 - Math.floor(rand(i + 3) * 17)).padStart(2, "0")}`,
-    road: ROADS[Math.floor(rand(i + 11) * ROADS.length)],
-    x: p.x,
-    y: p.y,
-    lat: p.lat,
-    lng: p.lng,
+    road,
+    x: 350 + (pos[1] - 80.3319) * 3000,
+    y: 200 - (pos[0] - 26.4499) * 4000,
+    lat: pos[0],
+    lng: pos[1],
     severity,
     confidence: Math.round(72 + rand(i + 5) * 27),
     size: +(0.2 + rand(i + 2) * 2.4).toFixed(2),
@@ -610,17 +738,30 @@ function GoogleMap({
   selected,
   onSelect,
   filterKey,
+  focusedRoad,
+  onFocusRoad,
+  hoveredRoad,
+  onHoverRoad,
 }: {
   list: Pothole[]
   selected?: Pothole
   onSelect: (p: Pothole) => void
   filterKey?: string
+  focusedRoad?: string
+  onFocusRoad?: (roadName?: string) => void
+  hoveredRoad?: string
+  onHoverRoad?: (roadName?: string) => void
 }) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map>(null)
   const tile = useRef<L.TileLayer>(null)
-  const layer = useRef<L.LayerGroup>(null)
+  const roadLayer = useRef<L.LayerGroup>(null)
+  const markerLayer = useRef<L.LayerGroup>(null)
   const [type, setType] = useState<keyof typeof TILES>("Street")
+  const [zoom, setZoom] = useState(12.5)
+
+  const roadSummaries = useMemo(() => computeRoadSummaries(list), [list])
+  const isDetailLevel = zoom >= 14 || Boolean(selected) || Boolean(focusedRoad)
 
   useEffect(() => {
     if (!el.current) return
@@ -636,7 +777,12 @@ function GoogleMap({
     ])
     L.control.zoom({ position: "topright" }).addTo(m)
     map.current = m
-    layer.current = L.layerGroup().addTo(m)
+    roadLayer.current = L.layerGroup().addTo(m)
+    markerLayer.current = L.layerGroup().addTo(m)
+
+    m.on("zoomend", () => {
+      setZoom(m.getZoom())
+    })
 
     const ro = new ResizeObserver(() => {
       m.invalidateSize()
@@ -661,40 +807,166 @@ function GoogleMap({
     ).addTo(map.current!)
   }, [type])
 
+  // 1. Render Street-Level Road Corridors
   useEffect(() => {
-    if (!layer.current) return
-    const g = layer.current
-    g.clearLayers()
+    if (!roadLayer.current || !map.current) return
+    const rg = roadLayer.current
+    rg.clearLayers()
+
+    Object.values(roadSummaries).forEach((summary) => {
+      if (!summary.points.length || summary.totalCount === 0) return
+      const isRoadFocused = (focusedRoad || selected?.road) === summary.name
+      const isRoadHovered = hoveredRoad === summary.name
+
+      // Outer Glow Polyline
+      const glowPoly = L.polyline(summary.points, {
+        color: summary.color,
+        weight: isRoadFocused ? 14 : isRoadHovered ? 12 : 9,
+        opacity: isRoadFocused ? 0.6 : isRoadHovered ? 0.48 : isDetailLevel ? 0.28 : 0.38,
+        lineCap: "round",
+        lineJoin: "round",
+        interactive: true,
+      })
+
+      // Inner Core Stroke
+      const corePoly = L.polyline(summary.points, {
+        color: summary.color,
+        weight: isRoadFocused ? 6 : isRoadHovered ? 5 : 4,
+        opacity: isRoadFocused ? 1.0 : isRoadHovered ? 0.95 : isDetailLevel ? 0.65 : 0.88,
+        lineCap: "round",
+        lineJoin: "round",
+        interactive: true,
+      })
+
+      const tooltipContent = `
+        <div style="font-family:inherit;font-size:12px;padding:3px 5px;color:#1a1a1a;">
+          <div style="font-weight:500;font-size:13px;color:#1a1a1a;margin-bottom:2px;">${summary.name}</div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${summary.color};"></span>
+            <span style="color:${summary.color};font-weight:500;">${summary.dominantSeverity} Severity Corridor</span>
+            <span style="color:#a1a1a1;">·</span>
+            <span style="color:#2d2d2d;font-weight:500;">${summary.totalCount} Hazards</span>
+          </div>
+          <div style="font-size:11px;color:#4b4b4b;margin-top:2px;">
+            <span style="color:#c62839;font-weight:500;">${summary.highCount} High</span> · 
+            <span style="color:#e69f00;font-weight:500;">${summary.medCount} Med</span> · 
+            <span style="color:#11806a;font-weight:500;">${summary.lowCount} Low</span>
+          </div>
+          <div style="font-size:10px;color:#2563eb;margin-top:4px;font-weight:500;">Click street to drill down & inspect hazards →</div>
+        </div>
+      `
+      glowPoly.bindTooltip(tooltipContent, { sticky: true, opacity: 0.95 })
+      corePoly.bindTooltip(tooltipContent, { sticky: true, opacity: 0.95 })
+
+      const handleRoadClick = () => {
+        onFocusRoad?.(summary.name)
+        if (map.current) {
+          map.current.fitBounds(L.polyline(summary.points).getBounds(), {
+            padding: [45, 45],
+            maxZoom: 16,
+          })
+        }
+      }
+
+      glowPoly.on("click", handleRoadClick)
+      corePoly.on("click", handleRoadClick)
+      glowPoly.on("mouseover", () => onHoverRoad?.(summary.name))
+      glowPoly.on("mouseout", () => onHoverRoad?.(undefined))
+      corePoly.on("mouseover", () => onHoverRoad?.(summary.name))
+      corePoly.on("mouseout", () => onHoverRoad?.(undefined))
+
+      glowPoly.addTo(rg)
+      corePoly.addTo(rg)
+
+      // Midpoint Street Badge Pill (shown on Overview or when Focused)
+      if (!isDetailLevel || isRoadFocused) {
+        const badgeIcon = L.divIcon({
+          className: "road-badge-icon",
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
+          html: `
+            <div class="road-badge-pill ${isRoadFocused ? "is-focused" : ""}" style="--c:${summary.color}">
+              <span class="badge-dot" style="background:${summary.color}"></span>
+              <span>${summary.name}</span>
+              <span class="badge-count">${summary.totalCount}</span>
+            </div>
+          `,
+        })
+
+        const badgeMarker = L.marker(summary.center, {
+          icon: badgeIcon,
+          zIndexOffset: isRoadFocused ? 500 : 200,
+        })
+        badgeMarker.on("click", handleRoadClick)
+        badgeMarker.addTo(rg)
+      }
+    })
+  }, [roadSummaries, isDetailLevel, focusedRoad, selected, hoveredRoad, onFocusRoad, onHoverRoad])
+
+  // 2. Render Individual Pothole Detection Markers
+  useEffect(() => {
+    if (!markerLayer.current) return
+    const mg = markerLayer.current
+    mg.clearLayers()
+
     list.forEach((p) => {
-      const s = selected?.id === p.id
+      const isSel = selected?.id === p.id
       const delay = ((idx(p) % 8) * 0.35).toFixed(2)
       const sevClass = `sev-${p.severity.toLowerCase()}`
+
+      // In Level 1 (Overview), keep markers subtle/minimized to eliminate clutter
+      const markerModeClass = !isDetailLevel ? "is-minimized" : ""
+
       const icon = L.divIcon({
         className: "pothole-bubble-icon",
         iconSize: [0, 0],
         iconAnchor: [0, 0],
-        html: `<div class="pothole-bubble-wrapper ${
-          s ? "is-selected" : ""
-        } ${sevClass}" style="--c:${SEV[p.severity]};--d:${delay}s"><div class="bubble-halo"></div><div class="bubble-ripple ripple-1"></div><div class="bubble-ripple ripple-2"></div><div class="bubble-ripple ripple-3"></div><div class="bubble-dot"></div><div class="bubble-hitarea"></div></div>`,
+        html: `
+          <div class="pothole-bubble-wrapper ${isSel ? "is-selected" : ""} ${markerModeClass} ${sevClass}" style="--c:${SEV[p.severity]};--d:${delay}s">
+            <div class="bubble-halo"></div>
+            ${
+              isSel
+                ? `<svg class="selected-dashed-ring" viewBox="0 0 46 46">
+                    <circle cx="23" cy="23" r="19" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 3.5" />
+                  </svg>`
+                : ""
+            }
+            <div class="bubble-ripple ripple-1"></div>
+            <div class="bubble-ripple ripple-2"></div>
+            <div class="bubble-dot"></div>
+            <div class="bubble-hitarea"></div>
+          </div>
+        `,
       })
-      L.marker([p.lat, p.lng], {
+
+      const marker = L.marker([p.lat, p.lng], {
         icon,
-        zIndexOffset: s ? 1000 : p.severity === "High" ? 100 : 0,
+        zIndexOffset: isSel ? 3000 : p.severity === "High" ? 150 : 50,
       })
         .bindTooltip(
-          `<div style="font-family:inherit;font-size:12px;padding:2px 4px;color:#1a1a1a;">
-            <span style="font-weight:500;color:#2563eb;">${p.id}</span>
-            <span style="margin:0 4px;color:#c7c7c7;">|</span>
-            <span style="color:${SEV[p.severity]};font-weight:500;">${p.severity}</span><br/>
-            <span style="color:#4b4b4b;">${p.road}, ${p.ward}</span><br/>
-            <span style="color:#2d2d2d;font-size:11px;">Depth: ${p.depth} cm · Area: ${p.size} m²</span>
+          `<div style="font-family:inherit;font-size:12px;padding:3px 5px;color:#1a1a1a;">
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="font-weight:500;color:#2563eb;">${p.id}</span>
+              <span style="color:#c7c7c7;">|</span>
+              <span style="color:${SEV[p.severity]};font-weight:500;">${p.severity} Hazard</span>
+            </div>
+            <div style="color:#4b4b4b;font-weight:500;margin-top:1px;">${p.road}, ${p.ward}</div>
+            <div style="color:#3c3c3c;font-size:11px;margin-top:2px;">Depth: ${p.depth} cm · Area: ${p.size} m² · ${p.confidence}% AI Conf.</div>
           </div>`,
-          { direction: "top", offset: [0, -18] },
+          { direction: "top", offset: [0, isSel ? -24 : -16] },
         )
-        .on("click", () => onSelect(p))
-        .addTo(g)
+        .on("click", () => {
+          onSelect(p)
+          onFocusRoad?.(p.road)
+        })
+
+      marker.addTo(mg)
+
+      if (isSel) {
+        marker.openTooltip()
+      }
     })
-  }, [list, selected, onSelect])
+  }, [list, selected, isDetailLevel, onSelect, onFocusRoad])
 
   const lastKey = useRef(filterKey)
   const hasInitialFit = useRef(false)
@@ -704,32 +976,105 @@ function GoogleMap({
     if (!hasInitialFit.current || filterKey !== lastKey.current) {
       hasInitialFit.current = true
       lastKey.current = filterKey
-      if (!selected) {
+      if (!selected && !focusedRoad) {
         map.current.fitBounds(L.latLngBounds(list.map((p) => [p.lat, p.lng])), {
           padding: [32, 32],
           maxZoom: 13,
         })
       }
     }
-  }, [list, filterKey, selected])
+  }, [list, filterKey, selected, focusedRoad])
 
+  // Center/Zoom on Selected Pothole
   useEffect(() => {
     if (selected && map.current) {
-      map.current.flyTo([selected.lat, selected.lng], 16, { duration: 0.6 })
+      map.current.flyTo([selected.lat, selected.lng], 16, { duration: 0.7 })
     }
   }, [selected])
+
+  const resetToCity = () => {
+    onFocusRoad?.(undefined)
+    onSelect(undefined as any)
+    if (map.current) {
+      map.current.setView([26.4600, 80.3320], 12.5)
+    }
+  }
 
   return (
     <>
       <div ref={el} className="absolute inset-0 z-0" />
+
+      {/* Top Left Status / Inspection Breadcrumb */}
       <div className="absolute top-3 left-3 z-[400] flex items-center gap-2 rounded-lg border border-[#e4e4e4] bg-white/95 px-3 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur">
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c62839] opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-[#c62839]" />
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span
+            className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
+              isDetailLevel ? "bg-primary-400" : "bg-[#c62839]"
+            }`}
+          />
+          <span
+            className={`relative inline-flex h-2 w-2 rounded-full ${
+              isDetailLevel ? "bg-primary-500" : "bg-[#c62839]"
+            }`}
+          />
         </span>
-        Kanpur GIS Live Feed · {list.length} hazards
+        <div className="flex items-center gap-2">
+          {isDetailLevel && (focusedRoad || selected) ? (
+            <>
+              <span className="text-[#3c3c3c]">
+                {selected ? (
+                  <>
+                    Hazard <span className="font-mono text-primary-500 font-medium">{selected.id}</span> · {selected.road}
+                  </>
+                ) : (
+                  <>
+                    Corridor: <span className="text-primary-500 font-medium">{focusedRoad}</span>
+                  </>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={resetToCity}
+                className="ml-1 rounded-md border border-[#c7c7c7] bg-white px-2 py-0.5 text-[11px] font-medium text-[#1a1a1a] hover:bg-[#fafafa] transition"
+              >
+                ↩ City View
+              </button>
+            </>
+          ) : (
+            <span>Kanpur GIS Live Feed · 8 Street Corridors · {list.length} hazards</span>
+          )}
+        </div>
       </div>
 
+      {/* Bottom Left Glassmorphic Map Legend */}
+      <div className="absolute bottom-3 left-3 z-[400] rounded-xl border border-[#e4e4e4] bg-white/95 p-2.5 text-xs shadow-sm backdrop-blur select-none max-w-[230px]">
+        <div className="text-[11px] font-medium text-[#4b4b4b] mb-1.5 flex items-center justify-between gap-2 border-b border-[#e4e4e4] pb-1">
+          <span>Corridor Severity</span>
+          <span className="text-[10px] font-mono text-primary-500">
+            {isDetailLevel ? "Level 2: Detail" : "Level 1: Overview"}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-4 rounded-full shrink-0" style={{ background: SEV.High }} />
+            <span className="text-[#1a1a1a]">High (Critical Damage)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-4 rounded-full shrink-0" style={{ background: SEV.Medium }} />
+            <span className="text-[#1a1a1a]">Medium (Moderate)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-4 rounded-full shrink-0" style={{ background: SEV.Low }} />
+            <span className="text-[#1a1a1a]">Low (Minor Hazards)</span>
+          </div>
+          <div className="flex items-center gap-2 pt-1 border-t border-[#e4e4e4] mt-0.5">
+            <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-dashed border-primary-500 bg-primary-100 shrink-0" />
+            <span className="text-[#3c3c3c] text-[10.5px]">Dashed Ring: Selected Hazard</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Right Map Tile Type Switcher */}
       <div className="absolute bottom-3 right-3 z-[400] flex rounded-lg border border-[#e4e4e4] bg-white/95 p-0.5 text-xs shadow-sm backdrop-blur">
         {(Object.keys(TILES) as keyof typeof TILES[]).map((t) => (
           <button
@@ -755,6 +1100,8 @@ function DetectionPage() {
   const [selected, setSelected] = useState<Pothole>()
   const [preview, setPreview] = useState<Pothole>()
   const [viewMode, setViewMode] = useState<"split" | "table">("split")
+  const [focusedRoad, setFocusedRoad] = useState<string>()
+  const [hoveredRoad, setHoveredRoad] = useState<string>()
 
   const base = useMemo(
     () =>
@@ -775,9 +1122,12 @@ function DetectionPage() {
   const selectPin = useMemo(
     () => (p: Pothole) => {
       setSelected(p)
-      document
-        .getElementById(p.id)
-        ?.scrollIntoView({ block: "center", behavior: "smooth" })
+      if (p) {
+        setFocusedRoad(p.road)
+        document
+          .getElementById(p.id)
+          ?.scrollIntoView({ block: "center", behavior: "smooth" })
+      }
     },
     [],
   )
@@ -878,39 +1228,62 @@ function DetectionPage() {
                   selected={selected}
                   onSelect={selectPin}
                   filterKey={`${sev}_${q}`}
+                  focusedRoad={focusedRoad}
+                  onFocusRoad={setFocusedRoad}
+                  hoveredRoad={hoveredRoad}
+                  onHoverRoad={setHoveredRoad}
                 />
               </div>
 
               {/* Quick Selection Banner below map */}
-              {selected && (
+              {(selected || focusedRoad) && (
                 <div className="flex items-center justify-between rounded-xl border border-primary-200 bg-primary-50/80 p-3.5 shadow-sm text-xs">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ background: SEV[selected.severity] }}
+                      style={{ background: selected ? SEV[selected.severity] : "#2563eb" }}
                     />
                     <div className="min-w-0">
-                      <div className="font-medium text-[#1a1a1a] truncate">
-                        {selected.id} · {selected.road}
-                      </div>
-                      <div className="text-[11px] text-[#3c3c3c]">
-                        Zone {selected.zone} · {selected.ward} · {selected.size} m²
-                        ({selected.depth} cm depth)
-                      </div>
+                      {selected ? (
+                        <>
+                          <div className="font-medium text-[#1a1a1a] truncate">
+                            {selected.id} · {selected.road}
+                          </div>
+                          <div className="text-[11px] text-[#3c3c3c]">
+                            Zone {selected.zone} · {selected.ward} · {selected.size} m² ({selected.depth} cm depth)
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="font-medium text-[#1a1a1a] truncate">
+                            Corridor Focus: {focusedRoad}
+                          </div>
+                          <div className="text-[11px] text-[#3c3c3c]">
+                            Inspecting {list.filter((p) => p.road === focusedRoad).length} hazards along this street segment
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {selected && (
+                      <button
+                        type="button"
+                        onClick={() => setPreview(selected)}
+                        className="rounded-lg bg-primary-300 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-primary-400"
+                      >
+                        Evidence
+                      </button>
+                    )}
                     <button
-                      onClick={() => setPreview(selected)}
-                      className="rounded-lg bg-primary-300 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-primary-400"
-                    >
-                      Evidence
-                    </button>
-                    <button
-                      onClick={() => setSelected(undefined)}
+                      type="button"
+                      onClick={() => {
+                        setSelected(undefined)
+                        setFocusedRoad(undefined)
+                      }}
                       className="rounded-lg border border-[#c7c7c7] px-2 py-1 text-xs font-medium text-[#3c3c3c] hover:bg-white"
                     >
-                      Clear
+                      Clear Focus
                     </button>
                   </div>
                 </div>
@@ -985,16 +1358,24 @@ function DetectionPage() {
                 <tbody className="divide-y divide-[#e4e4e4] text-[#2d2d2d]">
                   {list.map((p) => {
                     const isSel = selected?.id === p.id
+                    const isRoadMatch = !isSel && (hoveredRoad === p.road || focusedRoad === p.road)
                     const badge = SEV_BADGE[p.severity]
                     return (
                       <tr
                         id={p.id}
                         key={p.id}
-                        onClick={() => setSelected(p)}
+                        onMouseEnter={() => setHoveredRoad(p.road)}
+                        onMouseLeave={() => setHoveredRoad(undefined)}
+                        onClick={() => {
+                          setSelected(p)
+                          setFocusedRoad(p.road)
+                        }}
                         className={`cursor-pointer transition ${
                           isSel
                             ? "bg-primary-50/90 ring-1 ring-inset ring-primary-300"
-                            : "hover:bg-[#fafafa]"
+                            : isRoadMatch
+                              ? "bg-primary-50/40 hover:bg-primary-50/60"
+                              : "hover:bg-[#fafafa]"
                         }`}
                       >
                         {/* Photo Thumbnail */}
@@ -1041,8 +1422,15 @@ function DetectionPage() {
 
                         {/* Road & Ward */}
                         <td className="whitespace-nowrap px-3.5 py-2.5">
-                          <div className="text-xs font-medium text-[#1a1a1a]">
-                            {p.road}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-medium text-[#1a1a1a]">
+                              {p.road}
+                            </span>
+                            {focusedRoad === p.road && (
+                              <span className="rounded bg-primary-100 px-1 py-0.2 text-[10px] font-medium text-primary-500">
+                                Corridor
+                              </span>
+                            )}
                           </div>
                           <div className="text-[11px] text-[#4b4b4b]">
                             {p.ward}
@@ -1094,6 +1482,7 @@ function DetectionPage() {
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setSelected(p)
+                                setFocusedRoad(p.road)
                               }}
                               title="Locate on Kanpur Map"
                               className="rounded-md border border-[#e4e4e4] p-1.5 text-[#3c3c3c] hover:border-primary-300 hover:bg-primary-50 hover:text-primary-500 transition"

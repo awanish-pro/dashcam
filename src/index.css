@@ -197,7 +197,35 @@ b, strong, th, h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 16px var(--c);
 }
 
-/* Selected state */
+/* Selected state with prominent dotted/dashed stroke outline */
+.pothole-bubble-wrapper .selected-dashed-ring {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 46px;
+  height: 46px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 6;
+  color: var(--c);
+}
+
+.pothole-bubble-wrapper.is-selected .selected-dashed-ring {
+  display: block;
+  animation: rotate-dashed-ring 14s linear infinite;
+  filter: drop-shadow(0 0 5px var(--c));
+}
+
+@keyframes rotate-dashed-ring {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
 .pothole-bubble-wrapper.is-selected .bubble-dot {
   width: 17px;
   height: 17px;
@@ -212,6 +240,94 @@ b, strong, th, h1, h2, h3, h4, h5, h6 {
   opacity: 0.52;
   border-width: 2px;
   box-shadow: 0 0 20px var(--c);
+}
+
+/* Minimized marker state in Overview view (Level 1) */
+.pothole-bubble-wrapper.is-minimized .bubble-halo,
+.pothole-bubble-wrapper.is-minimized .bubble-ripple {
+  display: none !important;
+}
+
+.pothole-bubble-wrapper.is-minimized .bubble-dot {
+  width: 7px;
+  height: 7px;
+  border-width: 1.5px;
+  opacity: 0.85;
+}
+
+.pothole-bubble-wrapper.is-minimized:hover .bubble-dot {
+  transform: translate(-50%, -50%) scale(1.8);
+  opacity: 1;
+}
+
+/* Road segment severity badges & pills */
+.road-badge-icon,
+.leaflet-div-icon.road-badge-icon {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.road-badge-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 3px 9px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--c);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  font-size: 11px;
+  font-weight: 500;
+  color: #1a1a1a;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  z-index: 50;
+  user-select: none;
+}
+
+.road-badge-pill:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
+}
+
+.road-badge-pill.is-focused {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2.5px rgba(37, 99, 235, 0.4), 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
+.road-badge-pill .badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.road-badge-pill .badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--c);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 500;
+  margin-left: 2px;
 }
 
 /* Keyframes for Ripple Effect */
@@ -247,7 +363,8 @@ b, strong, th, h1, h2, h3, h4, h5, h6 {
 
 @media (prefers-reduced-motion: reduce) {
   .pothole-bubble-wrapper .bubble-ripple,
-  .pothole-bubble-wrapper .bubble-halo {
+  .pothole-bubble-wrapper .bubble-halo,
+  .pothole-bubble-wrapper .selected-dashed-ring {
     animation: none;
   }
 }
