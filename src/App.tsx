@@ -3150,33 +3150,20 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="min-w-0 flex-1">
-        <header className="flex items-center justify-between border-b border-[#e4e4e4] bg-white px-5 sm:px-8 py-3.5 sticky top-0 z-20 shadow-xs">
-          <div className="flex items-center gap-3">
-            {/* Hamburger Button to Toggle Sidebar */}
-            <button
-              type="button"
-              onClick={() => setSidebarOpen((prev) => !prev)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e4e4e4] bg-white text-[#3c3c3c] hover:border-primary-300 hover:bg-primary-50 hover:text-primary-500 transition shadow-2xs cursor-pointer focus:outline-none"
-              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              <Icon d={I.menu} className="h-4 w-4" />
-            </button>
-
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-lg font-medium text-[#1a1a1a]">{t(cur.l)}</h1>
-                {page !== "detect" && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-100 px-2.5 py-0.5 text-[11px] font-medium text-primary-500">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary-300" />
-                    Nagar Dristi
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-[#3c3c3c]">
-                {t(cur.d)} · {t("Kanpur Nagar Nigam")}
-              </p>
+        <header className="flex items-center justify-between border-b border-[#e4e4e4] bg-white px-8 py-4 sticky top-0 z-20 shadow-xs">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-lg font-medium text-[#1a1a1a]">{t(cur.l)}</h1>
+              {page !== "detect" && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-100 px-2.5 py-0.5 text-[11px] font-medium text-primary-500">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary-300" />
+                  Nagar Dristi
+                </span>
+              )}
             </div>
+            <p className="text-xs text-[#3c3c3c]">
+              {t(cur.d)} · {t("Kanpur Nagar Nigam")}
+            </p>
           </div>
         </header>
 
