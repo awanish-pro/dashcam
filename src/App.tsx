@@ -254,14 +254,14 @@ function computeRoadSummaries(potholes: Pothole[]): Record<string, RoadSummary> 
 }
 
 const KANPUR_ROADS_ASSIGNED: string[] = [
-  ...Array(10).fill("Mall Road"),
-  ...Array(8).fill("VIP Road"),
-  ...Array(6).fill("Naveen Market Rd"),
-  ...Array(10).fill("GT Road"),
-  ...Array(9).fill("Hamirpur Road"),
-  ...Array(9).fill("Kalpi Road"),
-  ...Array(10).fill("Swaroop Nagar Rd"),
-  ...Array(10).fill("Jajmau Rd"),
+  ...Array(30).fill("Mall Road"),
+  ...Array(25).fill("VIP Road"),
+  ...Array(25).fill("Naveen Market Rd"),
+  ...Array(30).fill("GT Road"),
+  ...Array(25).fill("Hamirpur Road"),
+  ...Array(25).fill("Kalpi Road"),
+  ...Array(30).fill("Swaroop Nagar Rd"),
+  ...Array(30).fill("Jajmau Rd"),
 ]
 
 const TODAY_ISO = "2026-10-22"
@@ -278,8 +278,8 @@ function formatDisplayDate(iso: string) {
 
 function getDeterministicDate(i: number, zone: number): { dateIso: string; detectedStr: string } {
   let daysAgo = 0
-  if (i % 5 === 0 || (zone === 1 && (i === 0 || i === 2 || i === 4))) {
-    daysAgo = 0 // Today (22 Oct 2026)
+  if ((zone === 1 && i < 65) || i % 3 === 0) {
+    daysAgo = 0 // Today (22 Oct 2026) - ensures 50+ records on today's date for Zone 1
   } else if (i % 5 === 1) {
     daysAgo = 1 // Yesterday (21 Oct 2026)
   } else if (i % 5 === 2) {
@@ -309,7 +309,7 @@ function getDeterministicDate(i: number, zone: number): { dateIso: string; detec
   return { dateIso, detectedStr }
 }
 
-const POTHOLES: Pothole[] = Array.from({ length: 72 }, (_, i) => {
+const POTHOLES: Pothole[] = Array.from({ length: 220 }, (_, i) => {
   const road = KANPUR_ROADS_ASSIGNED[i] || ROADS[i % ROADS.length]
   const zone = ROAD_ZONES[road] || 1
   const wards = KANPUR_WARDS[zone] || KANPUR_WARDS[1]
@@ -1661,6 +1661,19 @@ function GoogleMap({
   )
 }
 
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", total]
+  }
+  if (current >= total - 3) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total]
+  }
+  return [1, "...", current - 1, current, current + 1, "...", total]
+}
+
 function DetectionPage() {
   const [selectedZone, setSelectedZone] = useState<string>("1")
   const [selectedWard, setSelectedWard] = useState<string>("All")
@@ -1673,6 +1686,12 @@ function DetectionPage() {
   const [viewMode, setViewMode] = useState<"split" | "table">("split")
   const [focusedRoad, setFocusedRoad] = useState<string>()
   const [hoveredRoad, setHoveredRoad] = useState<string>()
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 50
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedZone, selectedWard, selectedRoad, sev, startDate, endDate])
 
   // Wards options for Kanpur based on selected Zone
   const wardOptions: DropdownOption[] = useMemo(() => {
@@ -1716,17 +1735,32 @@ function DetectionPage() {
     })
   }, [selectedZone, selectedWard, selectedRoad, sev, startDate, endDate])
 
+  const totalPages = Math.max(1, Math.ceil(list.length / pageSize))
+  const validPage = Math.min(currentPage, totalPages)
+
+  const paginatedList = useMemo(() => {
+    const start = (validPage - 1) * pageSize
+    return list.slice(start, start + pageSize)
+  }, [list, validPage, pageSize])
+
   const selectPin = useMemo(
     () => (p: Pothole) => {
       setSelected(p)
       if (p) {
         setFocusedRoad(p.road)
-        document
-          .getElementById(p.id)
-          ?.scrollIntoView({ block: "center", behavior: "smooth" })
+        const idx = list.findIndex((x) => x.id === p.id)
+        if (idx >= 0) {
+          const targetPage = Math.floor(idx / pageSize) + 1
+          setCurrentPage(targetPage)
+        }
+        setTimeout(() => {
+          document
+            .getElementById(p.id)
+            ?.scrollIntoView({ block: "center", behavior: "smooth" })
+        }, 50)
       }
     },
-    [],
+    [list, pageSize],
   )
 
   const t = useT()
@@ -1922,6 +1956,11 @@ function DetectionPage() {
                   <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-500">
                     {list.length} {t("Records")}
                   </span>
+                  {totalPages > 1 && (
+                    <span className="text-xs text-[#6e6e6e] font-medium hidden sm:inline">
+                      (Page {validPage} of {totalPages})
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 rounded-lg border border-[#e4e4e4] bg-white p-0.5 shadow-2xs">
                   <button
@@ -1951,7 +1990,7 @@ function DetectionPage() {
                 </div>
               </div>
 
-            <div className="overflow-x-auto overflow-y-auto max-h-[460px] lg:h-[calc(100vh-339px)] lg:max-h-none lg:min-h-[371px]">
+            <div className="overflow-x-auto overflow-y-auto max-h-[460px] lg:h-[calc(100vh-395px)] lg:max-h-none lg:min-h-[320px]">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10 border-b border-[#e4e4e4] bg-[#fafafa] text-left text-xs font-medium text-[#3c3c3c]">
                   <tr>
@@ -1975,7 +2014,7 @@ function DetectionPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e4e4e4] text-[#2d2d2d]">
-                  {list.map((p, rowIdx) => {
+                  {paginatedList.map((p, rowIdx) => {
                     const isSel = selected?.id === p.id
                     const isRoadMatch = !isSel && (hoveredRoad === p.road || focusedRoad === p.road)
                     const badge = SEV_BADGE[p.severity]
@@ -2001,7 +2040,7 @@ function DetectionPage() {
                         <td className="whitespace-nowrap px-3.5 py-2.5">
                           <IssueTypeCell
                             p={p}
-                            rowIndex={rowIdx}
+                            rowIndex={(validPage - 1) * pageSize + rowIdx}
                             onOpenPreview={() => setPreview(p)}
                           />
                         </td>
@@ -2096,7 +2135,7 @@ function DetectionPage() {
                       </tr>
                     )
                   })}
-                  {!list.length && (
+                  {!paginatedList.length && (
                     <tr>
                       <td
                         colSpan={8}
@@ -2108,6 +2147,93 @@ function DetectionPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Table Pagination Bar (50 rows per screen) */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#e4e4e4] bg-[#fafafa] px-4 py-2.5 text-xs text-[#4b4b4b]">
+              <div className="flex items-center gap-1.5 font-medium">
+                {list.length > 0 ? (
+                  <>
+                    <span>Showing</span>
+                    <span className="font-medium text-[#1a1a1a]">
+                      {(validPage - 1) * pageSize + 1}
+                    </span>
+                    <span>–</span>
+                    <span className="font-medium text-[#1a1a1a]">
+                      {Math.min(validPage * pageSize, list.length)}
+                    </span>
+                    <span>of</span>
+                    <span className="font-medium text-[#1a1a1a]">{list.length}</span>
+                    <span>records</span>
+                    <span className="text-[#a1a1a1] mx-1">·</span>
+                    <span className="text-[#6e6e6e]">50 per screen</span>
+                  </>
+                ) : (
+                  <span>0 records</span>
+                )}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  {/* Previous Button */}
+                  <button
+                    type="button"
+                    disabled={validPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className={`flex items-center gap-1 rounded-md border border-[#e4e4e4] px-2.5 py-1 text-xs font-medium transition ${
+                      validPage <= 1
+                        ? "cursor-not-allowed bg-white/60 text-[#a1a1a1] opacity-60"
+                        : "bg-white text-[#2d2d2d] hover:bg-slate-50 hover:text-[#1a1a1a] cursor-pointer"
+                    }`}
+                  >
+                    <Icon d={I.chevron} className="h-3.5 w-3.5 rotate-90" />
+                    <span>Prev</span>
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {getPageNumbers(validPage, totalPages).map((pNum, idx) => {
+                      if (pNum === "...") {
+                        return (
+                          <span key={`dots-${idx}`} className="px-1 text-xs text-[#a1a1a1]">
+                            ...
+                          </span>
+                        )
+                      }
+                      const isActive = pNum === validPage
+                      return (
+                        <button
+                          key={`page-${pNum}`}
+                          type="button"
+                          onClick={() => setCurrentPage(Number(pNum))}
+                          className={`h-6 min-w-[26px] rounded-md px-1.5 text-xs font-medium transition cursor-pointer ${
+                            isActive
+                              ? "bg-primary-500 text-white shadow-2xs"
+                              : "border border-[#e4e4e4] bg-white text-[#3c3c3c] hover:bg-slate-50 hover:text-[#1a1a1a]"
+                          }`}
+                        >
+                          {pNum}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    type="button"
+                    disabled={validPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className={`flex items-center gap-1 rounded-md border border-[#e4e4e4] px-2.5 py-1 text-xs font-medium transition ${
+                      validPage >= totalPages
+                        ? "cursor-not-allowed bg-white/60 text-[#a1a1a1] opacity-60"
+                        : "bg-white text-[#2d2d2d] hover:bg-slate-50 hover:text-[#1a1a1a] cursor-pointer"
+                    }`}
+                  >
+                    <span>Next</span>
+                    <Icon d={I.chevron} className="h-3.5 w-3.5 -rotate-90" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
