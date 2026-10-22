@@ -555,6 +555,7 @@ const I = {
     "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
   chevron: "m6 9 6 6 6-6",
   check: "m5 13 4 4L19 7",
+  menu: "M4 6h16M4 12h16M4 18h16",
 }
 
 const POTHOLE_IMGS = [
@@ -2894,6 +2895,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
 export default function App() {
   const [authed, setAuthed] = useState(false)
   const [page, setPage] = useState<"detect" | "users">("detect")
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [lang, setLang] = useState<Lang>(
     () => (localStorage.getItem("nd-lang") as Lang) || "en",
   )
@@ -2984,104 +2986,197 @@ export default function App() {
     <LangCtx.Provider value={lang}>
     <div className="flex min-h-screen bg-[#fafafa] font-sans text-[#1a1a1a]">
       {/* Sidebar styled per PGR Design System: White BG, #e4e4e4 border */}
-      <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-[#e4e4e4] bg-white">
-        <div className="flex items-center gap-3 border-b border-[#e4e4e4] px-5 py-4">
-          <NagarDristiLogo size={36} />
-          <div>
-            <div className="text-base font-medium text-primary-500 leading-tight">
-              Nagar Dristi
+      <aside
+        className={`sticky top-0 z-30 flex h-screen ${
+          sidebarOpen ? "w-64" : "w-16"
+        } shrink-0 flex-col border-r border-[#e4e4e4] bg-white transition-[width] duration-200 ease-in-out select-none`}
+      >
+        <div className="flex h-16 items-center border-b border-[#e4e4e4] px-4">
+          {sidebarOpen ? (
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <NagarDristiLogo size={32} />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-primary-500 leading-tight truncate">
+                    Nagar Dristi
+                  </div>
+                  <div className="text-[11px] text-[#4b4b4b] truncate">{t("Kanpur Nagar Nigam")}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#4b4b4b] hover:bg-[#fafafa] hover:text-[#1a1a1a] transition cursor-pointer"
+                title="Collapse sidebar"
+                aria-label="Collapse sidebar"
+              >
+                <Icon d={I.menu} className="h-4 w-4" />
+              </button>
             </div>
-            <div className="text-xs text-[#3c3c3c]">{t("Kanpur Nagar Nigam")}</div>
-          </div>
+          ) : (
+            <div className="flex w-full justify-center">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#3c3c3c] hover:bg-primary-50 hover:text-primary-500 transition cursor-pointer"
+                title="Expand sidebar"
+                aria-label="Expand sidebar"
+              >
+                <Icon d={I.menu} className="h-5 w-5" />
+              </button>
+            </div>
+          )}
         </div>
 
-        <nav className="mt-3 space-y-1 px-3">
-          {nav.map((x) => (
-            <button
-              key={x.k}
-              onClick={() => setPage(x.k)}
-              className={`flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition ${
-                page === x.k
-                  ? "bg-primary-300 text-white shadow-sm"
-                  : "text-primary-500 hover:bg-primary-100 hover:text-primary-500"
-              }`}
-            >
-              <Icon d={x.i} />
-              {t(x.l)}
-            </button>
-          ))}
+        <nav className="mt-3 space-y-1.5 px-2.5">
+          {nav.map((x) => {
+            const isActive = page === x.k
+            return (
+              <button
+                key={x.k}
+                onClick={() => setPage(x.k)}
+                title={!sidebarOpen ? t(x.l) : undefined}
+                className={`flex w-full items-center ${
+                  sidebarOpen ? "gap-3 px-3 py-2.5" : "justify-center px-0 py-2.5"
+                } rounded-lg text-sm font-medium transition cursor-pointer ${
+                  isActive
+                    ? "bg-primary-300 text-white shadow-sm"
+                    : "text-primary-500 hover:bg-primary-100 hover:text-primary-500"
+                }`}
+              >
+                <Icon d={x.i} className="h-4 w-4 shrink-0" />
+                {sidebarOpen && <span className="truncate">{t(x.l)}</span>}
+              </button>
+            )
+          })}
         </nav>
 
-        <div className="mt-auto space-y-3 border-t border-[#e4e4e4] px-4 py-4">
-          <div>
-            <div className="mb-1.5 text-[11px] font-medium text-[#4b4b4b]">
-              {t("Language")}
-            </div>
-            <div className="flex gap-1 rounded-lg border border-[#e4e4e4] bg-[#fafafa] p-1">
-              <button onClick={() => setLang("en")} className={seg(lang === "en")}>
-                English
+        <div className="mt-auto space-y-3 border-t border-[#e4e4e4] p-3">
+          {sidebarOpen ? (
+            <>
+              <div>
+                <div className="mb-1 text-[11px] font-medium text-[#4b4b4b]">
+                  {t("Language")}
+                </div>
+                <div className="flex gap-1 rounded-lg border border-[#e4e4e4] bg-[#fafafa] p-1">
+                  <button onClick={() => setLang("en")} className={seg(lang === "en")}>
+                    English
+                  </button>
+                  <button onClick={() => setLang("hi")} className={seg(lang === "hi")}>
+                    हिन्दी
+                  </button>
+                </div>
+              </div>
+              <div>
+                <div className="mb-1 text-[11px] font-medium text-[#4b4b4b]">
+                  {t("Theme")}
+                </div>
+                <div className="flex gap-1 rounded-lg border border-[#e4e4e4] bg-[#fafafa] p-1">
+                  <button onClick={() => setDark(false)} className={seg(!dark)}>
+                    <Icon d={I.sun} className="h-3.5 w-3.5" />
+                    {t("Light")}
+                  </button>
+                  <button onClick={() => setDark(true)} className={seg(dark)}>
+                    <Icon d={I.moon} className="h-3.5 w-3.5" />
+                    {t("Dark")}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setLang(lang === "en" ? "hi" : "en")}
+                title={`Switch to ${lang === "en" ? "Hindi" : "English"}`}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e4e4e4] bg-[#fafafa] text-[11px] font-medium text-primary-500 hover:bg-white shadow-2xs cursor-pointer"
+              >
+                {lang.toUpperCase()}
               </button>
-              <button onClick={() => setLang("hi")} className={seg(lang === "hi")}>
-                हिन्दी
+              <button
+                type="button"
+                onClick={() => setDark(!dark)}
+                title={dark ? "Switch to Light mode" : "Switch to Dark mode"}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e4e4e4] bg-[#fafafa] text-[#3c3c3c] hover:bg-white shadow-2xs cursor-pointer"
+              >
+                <Icon d={dark ? I.sun : I.moon} className="h-4 w-4" />
               </button>
             </div>
-          </div>
-          <div>
-            <div className="mb-1.5 text-[11px] font-medium text-[#4b4b4b]">
-              {t("Theme")}
-            </div>
-            <div className="flex gap-1 rounded-lg border border-[#e4e4e4] bg-[#fafafa] p-1">
-              <button onClick={() => setDark(false)} className={seg(!dark)}>
-                <Icon d={I.sun} className="h-3.5 w-3.5" />
-                {t("Light")}
-              </button>
-              <button onClick={() => setDark(true)} className={seg(dark)}>
-                <Icon d={I.moon} className="h-3.5 w-3.5" />
-                {t("Dark")}
-              </button>
-            </div>
-          </div>
+          )}
         </div>
 
-        <div className="border-t border-[#e4e4e4] p-4">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-primary-100 text-xs font-medium text-primary-500">
-              SA
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-[#1a1a1a]">
-                {t("Rajesh Kumar")}
+        <div className="border-t border-[#e4e4e4] p-3">
+          {sidebarOpen ? (
+            <div className="flex items-center gap-2.5">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-100 text-xs font-medium text-primary-500">
+                SA
               </div>
-              <div className="truncate text-[11px] text-[#4b4b4b]">
-                {t("System Administrator")}
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-[#1a1a1a]">
+                  {t("Rajesh Kumar")}
+                </div>
+                <div className="truncate text-[11px] text-[#4b4b4b]">
+                  {t("System Administrator")}
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setAuthed(false)}
+                className="rounded-md border border-[#e4e4e4] px-2 py-1 text-xs font-medium text-[#4b4b4b] transition hover:bg-[#fafafa] hover:text-[#1a1a1a] cursor-pointer"
+              >
+                {t("Log out")}
+              </button>
             </div>
-            <button
-              onClick={() => setAuthed(false)}
-              className="rounded-md border border-[#e4e4e4] px-2 py-1 text-xs font-medium text-[#4b4b4b] transition hover:bg-[#fafafa] hover:text-[#1a1a1a]"
-            >
-              {t("Log out")}
-            </button>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1.5">
+              <div
+                className="grid h-8 w-8 place-items-center rounded-full bg-primary-100 text-xs font-medium text-primary-500"
+                title="Rajesh Kumar · System Administrator"
+              >
+                SA
+              </div>
+              <button
+                type="button"
+                onClick={() => setAuthed(false)}
+                title={t("Log out")}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-[#4b4b4b] hover:bg-[#fafafa] hover:text-[#c62839] transition cursor-pointer"
+              >
+                <Icon d={I.x} className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
       {/* Main Content Area */}
       <main className="min-w-0 flex-1">
-        <header className="flex items-center justify-between border-b border-[#e4e4e4] bg-white px-8 py-4 sticky top-0 z-20 shadow-xs">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-lg font-medium text-[#1a1a1a]">{t(cur.l)}</h1>
-              {page !== "detect" && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-100 px-2.5 py-0.5 text-[11px] font-medium text-primary-500">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary-300" />
-                  Nagar Dristi
-                </span>
-              )}
+        <header className="flex items-center justify-between border-b border-[#e4e4e4] bg-white px-5 sm:px-8 py-3.5 sticky top-0 z-20 shadow-xs">
+          <div className="flex items-center gap-3">
+            {/* Hamburger Button to Toggle Sidebar */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e4e4e4] bg-white text-[#3c3c3c] hover:border-primary-300 hover:bg-primary-50 hover:text-primary-500 transition shadow-2xs cursor-pointer focus:outline-none"
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              <Icon d={I.menu} className="h-4 w-4" />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-lg font-medium text-[#1a1a1a]">{t(cur.l)}</h1>
+                {page !== "detect" && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-100 px-2.5 py-0.5 text-[11px] font-medium text-primary-500">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary-300" />
+                    Nagar Dristi
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#3c3c3c]">
+                {t(cur.d)} · {t("Kanpur Nagar Nigam")}
+              </p>
             </div>
-            <p className="text-xs text-[#3c3c3c]">
-              {t(cur.d)} · {t("Kanpur Nagar Nigam")}
-            </p>
           </div>
         </header>
 
