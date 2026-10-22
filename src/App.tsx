@@ -690,9 +690,30 @@ function IssueTypeCell({
   )
 }
 
-function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
-  const b = SEV_BADGE[p.severity]
+function formatSlashDate(iso?: string) {
+  if (!iso) return "05/08/2026"
+  const parts = iso.split("-")
+  if (parts.length < 3) return iso
+  const [y, m, d] = parts
+  return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`
+}
 
+function extractTime24(p: Pothole): string {
+  if (p.detected) {
+    const m = p.detected.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i)
+    if (m) {
+      let hr = parseInt(m[1], 10)
+      const min = m[2]
+      const ampm = m[3]?.toUpperCase()
+      if (ampm === "PM" && hr < 12) hr += 12
+      if (ampm === "AM" && hr === 12) hr = 0
+      return `${String(hr).padStart(2, "0")}:${min}`
+    }
+  }
+  return "15:26"
+}
+
+function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -707,7 +728,7 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-[#e4e4e4] bg-white shadow-2xl animate-in fade-in zoom-in-95 my-auto"
+        className="relative w-full max-w-3xl overflow-hidden rounded-2xl border border-[#e4e4e4] bg-white shadow-2xl animate-in fade-in zoom-in-95 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top-Right Cross Icon */}
@@ -736,66 +757,73 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
             <span>{p.vehicle}</span>
           </div>
         </div>
-        <div className="p-6">
-          <div className="flex items-center justify-between border-b border-[#e4e4e4] pb-4">
-            <div>
-              <div className="text-lg font-medium text-[#1a1a1a]">{p.road}</div>
-              <div className="text-xs text-[#3c3c3c]">
-                Zone {p.zone} · {p.ward} · Detected {p.detected}
-              </div>
-            </div>
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${b.bg} ${b.text} ${b.border}`}
-            >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ background: SEV[p.severity] }}
-              />
-              {p.severity} Severity
-            </span>
-          </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm">
-            <div className="rounded-lg bg-[#fafafa] p-3 border border-[#e4e4e4]">
-              <div className="text-xs text-[#4b4b4b]">Issue Type</div>
-              <div className="mt-1 text-base font-medium text-[#1a1a1a]">
-                {p.issueType}
+        {/* Bottom Information Strip */}
+        <div className="p-5 bg-white">
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-3 sm:gap-2">
+            <div>
+              <div className="text-[10.5px] font-medium uppercase text-[#737373] tracking-wide mb-1">
+                DATE
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-[#1a1a1a] whitespace-nowrap">
+                {formatSlashDate(p.dateIso)}
               </div>
             </div>
-            <div className="rounded-lg bg-[#fafafa] p-3 border border-[#e4e4e4]">
-              <div className="text-xs text-[#4b4b4b]">Surface</div>
-              <div className="mt-1 text-base font-medium text-[#4b4b4b]">
-                --
+            <div>
+              <div className="text-[10.5px] font-medium uppercase text-[#737373] tracking-wide mb-1">
+                TIME
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-[#1a1a1a] whitespace-nowrap">
+                {extractTime24(p)}
               </div>
             </div>
-            <div className="rounded-lg bg-[#fafafa] p-3 border border-[#e4e4e4]">
-              <div className="text-xs text-[#4b4b4b]">AI Confidence</div>
-              <div className="mt-1 text-base font-medium text-primary-500">
-                {p.confidence}%
+            <div>
+              <div className="text-[10.5px] font-medium uppercase text-[#737373] tracking-wide mb-1">
+                SEVERITY
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-[#1a1a1a] whitespace-nowrap">
+                -
               </div>
             </div>
-            <div className="rounded-lg bg-[#fafafa] p-3 border border-[#e4e4e4]">
-              <div className="text-xs text-[#4b4b4b]">Vehicle</div>
-              <div className="mt-1 text-base font-medium text-[#1a1a1a]">
+            <div>
+              <div className="text-[10.5px] font-medium uppercase text-[#737373] tracking-wide mb-1">
+                VEHICLE
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-[#1a1a1a] whitespace-nowrap">
                 {p.vehicle}
               </div>
             </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#3c3c3c]">
             <div>
-              <span className="text-[#4b4b4b]">GPS Coordinates: </span>
-              <span className="font-mono text-[#1a1a1a]">
-                {p.lat.toFixed(5)}° N, {p.lng.toFixed(5)}° E
-              </span>
+              <div className="text-[10.5px] font-medium uppercase text-[#737373] tracking-wide mb-1">
+                LAT
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-[#1a1a1a] whitespace-nowrap">
+                {p.lat.toFixed(4)}
+              </div>
             </div>
             <div>
-              <span className="text-[#4b4b4b]">Assigned Engineer: </span>
-              <span className="font-medium text-[#1a1a1a]">{p.engineer}</span>
+              <div className="text-[10.5px] font-medium uppercase text-[#737373] tracking-wide mb-1">
+                LNG
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-[#1a1a1a] whitespace-nowrap">
+                {p.lng.toFixed(4)}
+              </div>
             </div>
             <div>
-              <span className="text-[#4b4b4b]">Survey Vehicle: </span>
-              <span className="font-mono text-[#1a1a1a]">{p.vehicle}</span>
+              <div className="text-[10.5px] font-medium uppercase text-[#737373] tracking-wide mb-1">
+                ZONE
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-[#1a1a1a] whitespace-nowrap">
+                Zone {p.zone}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10.5px] font-medium uppercase text-[#737373] tracking-wide mb-1">
+                WARD
+              </div>
+              <div className="text-xs sm:text-sm font-medium text-[#1a1a1a] uppercase truncate whitespace-nowrap" title={p.ward}>
+                {p.ward || ""}
+              </div>
             </div>
           </div>
         </div>
