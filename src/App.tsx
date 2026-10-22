@@ -1172,7 +1172,7 @@ function MonthCard({
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
   return (
-    <div className="rounded-xl border border-[#e4e4e4] bg-[#fafafa]/60 p-3 shadow-2xs">
+    <div>
       {/* Month Header */}
       <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-[#e4e4e4]">
         {onPrevMonth ? (
@@ -1180,8 +1180,8 @@ function MonthCard({
             type="button"
             disabled={!canPrev}
             onClick={onPrevMonth}
-            className={`p-1 rounded-md text-[#4b4b4b] hover:bg-white hover:text-[#1a1a1a] transition ${
-              !canPrev ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+            className={`p-1.5 rounded-lg text-[#4b4b4b] hover:bg-white hover:text-[#2563eb] transition ${
+              !canPrev ? "opacity-20 cursor-not-allowed" : "cursor-pointer hover:shadow-2xs"
             }`}
             title="Previous Month"
           >
@@ -1190,7 +1190,7 @@ function MonthCard({
             </svg>
           </button>
         ) : (
-          <div className="w-5" />
+          <div className="w-6.5" />
         )}
         <span className="text-xs font-medium text-[#1a1a1a]">
           {MONTH_NAMES[month]} {year}
@@ -1200,8 +1200,8 @@ function MonthCard({
             type="button"
             disabled={!canNext}
             onClick={onNextMonth}
-            className={`p-1 rounded-md text-[#4b4b4b] hover:bg-white hover:text-[#1a1a1a] transition ${
-              !canNext ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+            className={`p-1.5 rounded-lg text-[#4b4b4b] hover:bg-white hover:text-[#2563eb] transition ${
+              !canNext ? "opacity-20 cursor-not-allowed" : "cursor-pointer hover:shadow-2xs"
             }`}
             title="Next Month"
           >
@@ -1210,7 +1210,7 @@ function MonthCard({
             </svg>
           </button>
         ) : (
-          <div className="w-5" />
+          <div className="w-6.5" />
         )}
       </div>
 
@@ -1241,9 +1241,9 @@ function MonthCard({
             <div
               key={dateIso}
               className={`h-7 flex items-center justify-center relative ${
-                isInRange ? "bg-primary-100" : ""
-              } ${isStart && !isEnd ? "bg-gradient-to-r from-transparent to-primary-100 rounded-l-full" : ""} ${
-                isEnd && !isStart ? "bg-gradient-to-l from-transparent to-primary-100 rounded-r-full" : ""
+                isInRange ? "bg-[#eff6ff]" : ""
+              } ${isStart && !isEnd ? "bg-gradient-to-r from-transparent to-[#eff6ff] rounded-l-full" : ""} ${
+                isEnd && !isStart ? "bg-gradient-to-l from-transparent to-[#eff6ff] rounded-r-full" : ""
               }`}
             >
               <button
@@ -1253,14 +1253,14 @@ function MonthCard({
                 onMouseEnter={() => onDateHover(dateIso)}
                 className={`h-7 w-7 flex items-center justify-center text-[11px] font-medium transition cursor-pointer ${
                   isStart || isEnd
-                    ? "bg-primary-500 text-white rounded-full shadow-xs ring-2 ring-primary-300"
+                    ? "bg-[#2563eb] text-white rounded-full shadow-xs ring-2 ring-[#93c5fd]"
                     : isInRange
-                      ? "text-primary-700 hover:bg-primary-200 rounded-none"
+                      ? "text-[#1d4ed8] hover:bg-[#dbeafe] rounded-none font-medium"
                       : isFuture
                         ? "text-[#c7c7c7] cursor-not-allowed"
                         : isToday
-                          ? "text-primary-600 ring-1 ring-primary-400 rounded-full hover:bg-primary-50"
-                          : "text-[#1a1a1a] hover:bg-[#e4e4e4] rounded-full"
+                          ? "text-[#2563eb] ring-1 ring-[#2563eb]/50 rounded-full hover:bg-[#eff6ff]"
+                          : "text-[#1a1a1a] hover:bg-white hover:text-[#2563eb] hover:shadow-2xs rounded-full"
                 }`}
               >
                 {day}
@@ -1390,14 +1390,14 @@ function MapDateRangeFilter({
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className={`flex items-center gap-2 rounded-lg border border-[#e4e4e4] bg-white/95 px-3 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur transition hover:bg-white hover:border-primary-300 cursor-pointer ${
-            isOpen ? "ring-2 ring-primary-300 border-primary-400" : ""
+          className={`flex items-center gap-2 rounded-lg border border-[#e4e4e4] bg-white/95 px-3 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur transition hover:bg-white hover:border-[#2563eb]/40 cursor-pointer ${
+            isOpen ? "ring-2 ring-[#2563eb]/20 border-[#2563eb]" : ""
           }`}
-          title="Filter by Calendar Date Range (2 Month Cards)"
+          title="Filter by Calendar Date Range"
         >
-          <Icon d={I.calendar} className="h-3.5 w-3.5 text-primary-500 shrink-0" />
+          <Icon d={I.calendar} className="h-3.5 w-3.5 text-[#2563eb] shrink-0" />
           <span className="font-medium text-[#1a1a1a] max-w-[190px] truncate">{labelText}</span>
-          <span className="rounded-full bg-primary-100 px-1.5 py-0.2 text-[10.5px] font-medium text-primary-500">
+          <span className="rounded-full bg-[#eff6ff] px-1.5 py-0.2 text-[10.5px] font-medium text-[#2563eb]">
             {hazardCount}
           </span>
           <svg
@@ -1413,81 +1413,85 @@ function MapDateRangeFilter({
         {isOpen && (
           <div className="absolute top-full left-0 mt-1.5 w-[530px] max-w-[calc(100vw-32px)] max-h-[85vh] overflow-y-auto rounded-2xl border border-[#e4e4e4] bg-white p-3.5 shadow-2xl backdrop-blur animate-in fade-in zoom-in-95 z-50">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#e4e4e4] pb-2 mb-3">
+            <div className="flex items-center justify-between border-b border-[#e4e4e4] pb-2.5 mb-3">
               <div className="flex items-center gap-2">
-                <Icon d={I.calendar} className="h-4 w-4 text-primary-500" />
+                <Icon d={I.calendar} className="h-4 w-4 text-[#2563eb]" />
                 <span className="text-xs font-medium text-[#1a1a1a]">Select Date Range (2 Months)</span>
               </div>
-              <span className="text-[11px] text-[#6e6e6e]">
-                {rangeStep === "end" ? "Click to set end date" : "Click to select range"}
-              </span>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1 rounded-md text-[#6e6e6e] hover:text-[#1a1a1a] hover:bg-[#fafafa] transition cursor-pointer"
+                title="Close calendar"
+                aria-label="Close calendar"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            {/* 2 Month Cards Side-by-Side */}
+            {/* Single Combined Month Card with Divider Line */}
             <div
-              className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+              className="rounded-xl border border-[#e4e4e4] bg-[#fafafa]/50 p-3 sm:p-3.5 shadow-2xs"
               onMouseLeave={() => setHoverDate(null)}
             >
-              {/* Card 1: Left Month (September 2026) */}
-              <MonthCard
-                year={leftYear}
-                month={leftMonth}
-                effStart={effStart}
-                effEnd={effEnd}
-                onDateClick={handleDateClick}
-                onDateHover={handleDateHover}
-                onPrevMonth={handlePrevMonths}
-                canPrev={true}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-[#e4e4e4] gap-3 sm:gap-0">
+                {/* Month 1: Left Month (September 2026) */}
+                <div className="sm:pr-3.5">
+                  <MonthCard
+                    year={leftYear}
+                    month={leftMonth}
+                    effStart={effStart}
+                    effEnd={effEnd}
+                    onDateClick={handleDateClick}
+                    onDateHover={handleDateHover}
+                    onPrevMonth={handlePrevMonths}
+                    canPrev={true}
+                  />
+                </div>
 
-              {/* Card 2: Right Month (October 2026) */}
-              <MonthCard
-                year={rightYear}
-                month={rightMonth}
-                effStart={effStart}
-                effEnd={effEnd}
-                onDateClick={handleDateClick}
-                onDateHover={handleDateHover}
-                onNextMonth={handleNextMonths}
-                canNext={!isAtCurrentMonth}
-              />
+                {/* Month 2: Right Month (October 2026) */}
+                <div className="sm:pl-3.5 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#e4e4e4]">
+                  <MonthCard
+                    year={rightYear}
+                    month={rightMonth}
+                    effStart={effStart}
+                    effEnd={effEnd}
+                    onDateClick={handleDateClick}
+                    onDateHover={handleDateHover}
+                    onNextMonth={handleNextMonths}
+                    canNext={!isAtCurrentMonth}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Footer */}
-            <div className="mt-3.5 pt-3 border-t border-[#e4e4e4] flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 text-xs text-[#3c3c3c]">
-                <span className="font-medium text-[#1a1a1a]">Range:</span>
-                <span className="font-mono text-primary-500 font-medium bg-primary-50 border border-primary-200 px-2 py-0.5 rounded-md">
-                  {tempStart === tempEnd
-                    ? formatDisplayDate(tempStart)
-                    : `${formatDisplayDate(tempStart)} → ${formatDisplayDate(tempEnd)}`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTempStart(TODAY_ISO)
-                    setTempEnd(TODAY_ISO)
-                    setRangeStep("start")
-                    onRangeChange(TODAY_ISO, TODAY_ISO)
-                    setIsOpen(false)
-                  }}
-                  className="text-xs text-[#4b4b4b] hover:text-[#1a1a1a] underline px-2 py-1 cursor-pointer"
-                >
-                  Reset to Today
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onRangeChange(tempStart, tempEnd)
-                    setIsOpen(false)
-                  }}
-                  className="rounded-lg bg-primary-500 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-primary-600 shadow-sm cursor-pointer"
-                >
-                  Apply Range
-                </button>
-              </div>
+            <div className="mt-3.5 pt-3 border-t border-[#e4e4e4] flex items-center justify-end gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setTempStart(TODAY_ISO)
+                  setTempEnd(TODAY_ISO)
+                  setRangeStep("start")
+                  onRangeChange(TODAY_ISO, TODAY_ISO)
+                  setIsOpen(false)
+                }}
+                className="text-xs text-[#4b4b4b] hover:text-[#2563eb] px-2.5 py-1.5 rounded-lg hover:bg-[#fafafa] transition cursor-pointer font-medium"
+              >
+                Reset to Today
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onRangeChange(tempStart, tempEnd)
+                  setIsOpen(false)
+                }}
+                className="rounded-lg bg-[#2563eb] hover:bg-[#1d4ed8] px-4 py-1.5 text-xs font-medium text-white transition shadow-sm cursor-pointer"
+              >
+                Apply Range
+              </button>
             </div>
           </div>
         )}
