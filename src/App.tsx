@@ -714,8 +714,10 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3.5 top-3.5 z-30 flex items-center justify-center h-8 w-8 rounded-full bg-[#1a1a1a]/75 hover:bg-[#1a1a1a] text-white transition shadow-md backdrop-blur cursor-pointer"
+          style={{ position: "absolute", top: "16px", right: "16px", zIndex: 50 }}
+          className="flex items-center justify-center h-8 w-8 rounded-full bg-[#1a1a1a]/80 hover:bg-[#1a1a1a] text-white transition shadow-lg backdrop-blur cursor-pointer focus:outline-none"
           title="Close (Esc)"
+          aria-label="Close modal"
         >
           <Icon d={I.x} className="h-4 w-4" />
         </button>
@@ -780,7 +782,7 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-[#3c3c3c]">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-[#3c3c3c]">
             <div>
               <span className="text-[#4b4b4b]">GPS Coordinates: </span>
               <span className="font-mono text-[#1a1a1a]">
@@ -794,12 +796,6 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
             <div>
               <span className="text-[#4b4b4b]">Survey Vehicle: </span>
               <span className="font-mono text-[#1a1a1a]">{p.vehicle}</span>
-            </div>
-            <div>
-              <span className="text-[#4b4b4b]">Telemetry Passes: </span>
-              <span className="font-medium text-[#1a1a1a]">
-                {p.passes} verification passes
-              </span>
             </div>
           </div>
         </div>
