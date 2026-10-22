@@ -599,9 +599,9 @@ function IssueTypeCell({
         type="button"
         onClick={handleClick}
         title={`Click or hover to preview ${p.issueType} photo`}
-        className="group inline-flex items-center gap-1 text-xs font-medium text-[#1a1a1a] hover:text-primary-500 transition text-left cursor-pointer focus:outline-none"
+        className="group inline-flex items-center gap-1 text-xs font-medium text-primary-500 hover:text-primary-600 transition text-left cursor-pointer focus:outline-none"
       >
-        <span className="underline decoration-dotted underline-offset-4 decoration-[#c7c7c7] group-hover:decoration-primary-400 group-hover:text-primary-500">
+        <span className="underline decoration-dotted underline-offset-4 decoration-primary-300 group-hover:decoration-primary-500">
           {p.issueType}
         </span>
       </button>
@@ -633,7 +633,7 @@ function IssueTypeCell({
             </div>
           </div>
           <div className="mt-1.5 flex items-center justify-between px-1 text-[10.5px]">
-            <span className="font-mono text-[#6e6e6e]">{p.id}</span>
+            <span className="text-[#6e6e6e] truncate max-w-[140px]">{p.road}</span>
             <span className="text-primary-500 font-medium hover:underline">Click to enlarge ↗</span>
           </div>
         </div>
@@ -1574,7 +1574,6 @@ function DetectionPage() {
                   <tr>
                     {[
                       { key: "issue", label: "Issue Type", align: "text-left" },
-                      { key: "id", label: "ID", align: "text-left" },
                       { key: "datetime", label: "Date & Time", align: "text-left" },
                       { key: "severity", label: "Severity", align: "text-left" },
                       { key: "location", label: "Road & Ward", align: "text-left" },
@@ -1624,14 +1623,7 @@ function DetectionPage() {
                           />
                         </td>
 
-                        {/* 2. ID */}
-                        <td className="whitespace-nowrap px-3.5 py-2.5">
-                          <div className="font-mono text-xs font-medium text-[#1a1a1a]">
-                            {p.id}
-                          </div>
-                        </td>
-
-                        {/* 3. Date & Time */}
+                        {/* 2. Date & Time */}
                         <td className="whitespace-nowrap px-3.5 py-2.5">
                           <div className="text-xs font-medium text-[#1a1a1a]">
                             {p.detected.split(",")[0]}
@@ -1724,7 +1716,7 @@ function DetectionPage() {
                   {!list.length && (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={8}
                         className="py-12 text-center text-sm text-[#4b4b4b]"
                       >
                         No hazards match your selected Zone, Ward, Road, or Severity filters.
