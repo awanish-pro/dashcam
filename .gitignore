@@ -1,22 +1,39 @@
+# Dependencies & Build
 node_modules/
 dist/
 build/
 .cache/
-.env*
 .vite/
-vite.config.*.timestamp-*
 *.tsbuildinfo
-*-debug.log*
+
+# Environment & Credentials
+.env*
+!.env.example
+
+# Logs & Temporary Files
 logs/
 *.log
-.claude-replay.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 .tmp-*
-/.figma/design-context/
+*.tmp
+*.bak
+*.backup
+*~
 
-# Platform-managed agentplat state, not project source. In the
-# client-initiated single-repo workspace layout (make's `Path: "."` spec) the
-# repo root IS the workspace root, so these land inside this repo rather than
-# beside it.
+# Editor & OS Artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Platform & Agent Artifacts
+.claude-replay.*
+/.figma/design-context/
 /.plugins/
 /.opencode-skills/
 .vercel

@@ -1644,7 +1644,7 @@ function GoogleMap({
 
       {/* Bottom Right Map Tile Type Switcher */}
       <div className="absolute bottom-3 right-3 z-[400] flex rounded-lg border border-[#e4e4e4] bg-white/95 p-0.5 text-xs shadow-sm backdrop-blur">
-        {(Object.keys(TILES) as keyof typeof TILES[]).map((t) => (
+        {(Object.keys(TILES) as (keyof typeof TILES)[]).map((t) => (
           <button
             key={t}
             onClick={() => setType(t)}
