@@ -68,6 +68,7 @@ type Pothole = {
   detected: string
   passes: number
   status: "New" | "Verified" | "Dismissed"
+  dateIso: string
 }
 type User = {
   id: string
@@ -263,6 +264,51 @@ const KANPUR_ROADS_ASSIGNED: string[] = [
   ...Array(10).fill("Jajmau Rd"),
 ]
 
+const TODAY_ISO = "2026-10-22"
+const TWO_MONTHS_AGO_ISO = "2026-08-22"
+
+function formatDisplayDate(iso: string) {
+  if (!iso) return ""
+  const parts = iso.split("-").map(Number)
+  if (parts.length < 3) return iso
+  const [y, m, d] = parts
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  return `${d} ${months[(m || 1) - 1]} ${y}`
+}
+
+function getDeterministicDate(i: number, zone: number): { dateIso: string; detectedStr: string } {
+  let daysAgo = 0
+  if (i % 5 === 0 || (zone === 1 && (i === 0 || i === 2 || i === 4))) {
+    daysAgo = 0 // Today (22 Oct 2026)
+  } else if (i % 5 === 1) {
+    daysAgo = 1 // Yesterday (21 Oct 2026)
+  } else if (i % 5 === 2) {
+    daysAgo = 2 + (i % 5) // Last 7 days (17 - 20 Oct 2026)
+  } else if (i % 5 === 3) {
+    daysAgo = 8 + (i % 20) // Last 30 days (02 Oct - 14 Oct 2026)
+  } else {
+    daysAgo = 28 + (i % 30) // Last 2 months (late Aug - Sep 2026)
+  }
+
+  const baseDate = new Date(2026, 9, 22)
+  baseDate.setDate(baseDate.getDate() - daysAgo)
+
+  const y = baseDate.getFullYear()
+  const m = String(baseDate.getMonth() + 1).padStart(2, "0")
+  const d = String(baseDate.getDate()).padStart(2, "0")
+  const dateIso = `${y}-${m}-${d}`
+
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const monthName = months[baseDate.getMonth()]
+  const hour = 8 + ((i * 3) % 11)
+  const min = String((i * 17) % 60).padStart(2, "0")
+  const ampm = hour >= 12 ? "PM" : "AM"
+  const formattedHour = String(hour > 12 ? hour - 12 : hour || 12).padStart(2, "0")
+  const detectedStr = `${d} ${monthName} ${y}, ${formattedHour}:${min} ${ampm}`
+
+  return { dateIso, detectedStr }
+}
+
 const POTHOLES: Pothole[] = Array.from({ length: 72 }, (_, i) => {
   const road = KANPUR_ROADS_ASSIGNED[i] || ROADS[i % ROADS.length]
   const zone = ROAD_ZONES[road] || 1
@@ -281,6 +327,7 @@ const POTHOLES: Pothole[] = Array.from({ length: 72 }, (_, i) => {
   }
   const pos = pointOnRoad(road, rand(i * 3 + 1), i)
   const issueType: IssueType = (i % 4 === 1 || i % 7 === 0) ? "Garbage" : "Pothole"
+  const { dateIso, detectedStr } = getDeterministicDate(i, zone)
   return {
     id: `PH-KNP-${String(2400 + i * 7).padStart(5, "0")}`,
     zone,
@@ -297,7 +344,8 @@ const POTHOLES: Pothole[] = Array.from({ length: 72 }, (_, i) => {
     depth: Math.round(3 + rand(i + 4) * 14),
     engineer: ENGINEERS[zone - 1],
     vehicle: `UP78-${4100 + (i % 9)}`,
-    detected: `${String(1 + (i % 27)).padStart(2, "0")} Sep 2026, ${String(8 + (i % 10)).padStart(2, "0")}:${String((i * 13) % 60).padStart(2, "0")}`,
+    dateIso,
+    detected: detectedStr,
     passes: 1 + Math.floor(rand(i + 8) * 4),
     status:
       rand(i + 21) > 0.8
@@ -873,6 +921,231 @@ function SearchBox({
 
 const TILES = { Street: "m", Satellite: "y" } as const
 
+function MapDateRangeFilter({
+  startDate,
+  endDate,
+  onRangeChange,
+  hazardCount,
+  onResetCityView,
+  isDrilledDown,
+}: {
+  startDate: string
+  endDate: string
+  onRangeChange: (start: string, end: string) => void
+  hazardCount: number
+  onResetCityView?: () => void
+  isDrilledDown?: boolean
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [tempStart, setTempStart] = useState(startDate)
+  const [tempEnd, setTempEnd] = useState(endDate)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setTempStart(startDate)
+    setTempEnd(endDate)
+  }, [startDate, endDate])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [isOpen])
+
+  const isToday = startDate === TODAY_ISO && endDate === TODAY_ISO
+  const isYesterday = startDate === "2026-10-21" && endDate === "2026-10-21"
+  const isLast7 = startDate === "2026-10-16" && endDate === TODAY_ISO
+  const isLast30 = startDate === "2026-09-22" && endDate === TODAY_ISO
+  const isLast2Months = startDate === TWO_MONTHS_AGO_ISO && endDate === TODAY_ISO
+
+  const applyPreset = (s: string, e: string) => {
+    onRangeChange(s, e)
+    setIsOpen(false)
+  }
+
+  const handleApplyCustom = () => {
+    if (tempStart && tempEnd) {
+      if (tempStart > tempEnd) {
+        onRangeChange(tempEnd, tempStart)
+      } else {
+        onRangeChange(tempStart, tempEnd)
+      }
+      setIsOpen(false)
+    }
+  }
+
+  const labelText = useMemo(() => {
+    if (isToday) return `Today (${formatDisplayDate(TODAY_ISO)})`
+    if (startDate === endDate) return formatDisplayDate(startDate)
+    return `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`
+  }, [isToday, startDate, endDate])
+
+  return (
+    <div ref={containerRef} className="absolute top-3 left-3 z-[400] flex items-center gap-1.5 select-none">
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className={`flex items-center gap-2 rounded-lg border border-[#e4e4e4] bg-white/95 px-3 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur transition hover:bg-white hover:border-primary-300 ${
+            isOpen ? "ring-2 ring-primary-300 border-primary-400" : ""
+          }`}
+          title="Date Range Filter (up to 2 months)"
+        >
+          <Icon d={I.calendar} className="h-3.5 w-3.5 text-primary-500 shrink-0" />
+          <span className="font-medium text-[#1a1a1a] max-w-[170px] truncate">{labelText}</span>
+          <span className="rounded-full bg-primary-100 px-1.5 py-0.2 text-[10.5px] font-medium text-primary-500">
+            {hazardCount}
+          </span>
+          <svg
+            className={`h-3 w-3 text-[#6e6e6e] transition-transform ${isOpen ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <div className="absolute top-full left-0 mt-1.5 w-[290px] sm:w-[320px] rounded-xl border border-[#e4e4e4] bg-white p-3.5 shadow-xl backdrop-blur animate-in fade-in zoom-in-95 z-50">
+            <div className="flex items-center justify-between border-b border-[#e4e4e4] pb-2 mb-2.5">
+              <span className="text-xs font-medium text-[#1a1a1a]">Date Range Filter</span>
+              <span className="text-[10.5px] text-[#4b4b4b]">Max 2 Months</span>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="mb-3">
+              <div className="text-[11px] font-medium text-[#4b4b4b] mb-1.5">Quick Presets</div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => applyPreset(TODAY_ISO, TODAY_ISO)}
+                  className={`rounded-md px-2 py-1 text-xs text-left transition font-medium ${
+                    isToday
+                      ? "bg-primary-500 text-white"
+                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
+                  }`}
+                >
+                  ● Today (Default)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset("2026-10-21", "2026-10-21")}
+                  className={`rounded-md px-2 py-1 text-xs text-left transition font-medium ${
+                    isYesterday
+                      ? "bg-primary-500 text-white"
+                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
+                  }`}
+                >
+                  Yesterday
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset("2026-10-16", TODAY_ISO)}
+                  className={`rounded-md px-2 py-1 text-xs text-left transition font-medium ${
+                    isLast7
+                      ? "bg-primary-500 text-white"
+                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
+                  }`}
+                >
+                  Last 7 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset("2026-09-22", TODAY_ISO)}
+                  className={`rounded-md px-2 py-1 text-xs text-left transition font-medium ${
+                    isLast30
+                      ? "bg-primary-500 text-white"
+                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
+                  }`}
+                >
+                  Last 30 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset(TWO_MONTHS_AGO_ISO, TODAY_ISO)}
+                  className={`col-span-2 rounded-md px-2 py-1 text-xs text-center transition font-medium ${
+                    isLast2Months
+                      ? "bg-primary-500 text-white"
+                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
+                  }`}
+                >
+                  Full 2 Months (22 Aug – 22 Oct 2026)
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Range Picker */}
+            <div className="pt-2 border-t border-[#e4e4e4]">
+              <div className="text-[11px] font-medium text-[#4b4b4b] mb-1.5">Custom Range (within 2 months)</div>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                  <label className="text-[10px] text-[#4b4b4b] block mb-0.5">Start Date</label>
+                  <input
+                    type="date"
+                    min={TWO_MONTHS_AGO_ISO}
+                    max={TODAY_ISO}
+                    value={tempStart}
+                    onChange={(e) => setTempStart(e.target.value)}
+                    className="w-full rounded-md border border-[#c7c7c7] bg-white px-2 py-1 text-xs text-[#1a1a1a] focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-[#4b4b4b] block mb-0.5">End Date</label>
+                  <input
+                    type="date"
+                    min={tempStart || TWO_MONTHS_AGO_ISO}
+                    max={TODAY_ISO}
+                    value={tempEnd}
+                    onChange={(e) => setTempEnd(e.target.value)}
+                    className="w-full rounded-md border border-[#c7c7c7] bg-white px-2 py-1 text-xs text-[#1a1a1a] focus:border-primary-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyPreset(TODAY_ISO, TODAY_ISO)}
+                  className="text-xs text-[#4b4b4b] hover:text-[#1a1a1a] underline"
+                >
+                  Reset to Today
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyCustom}
+                  className="rounded-lg bg-primary-500 px-3 py-1 text-xs font-medium text-white transition hover:bg-primary-600"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isDrilledDown && onResetCityView && (
+        <button
+          type="button"
+          onClick={onResetCityView}
+          className="rounded-lg border border-[#e4e4e4] bg-white/95 px-2.5 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur hover:bg-white hover:text-primary-500 transition"
+          title="Zoom out to Kanpur City View"
+        >
+          ↩ City View
+        </button>
+      )}
+    </div>
+  )
+}
+
 function GoogleMap({
   list,
   selected,
@@ -882,6 +1155,9 @@ function GoogleMap({
   onFocusRoad,
   hoveredRoad,
   onHoverRoad,
+  startDate,
+  endDate,
+  onDateRangeChange,
 }: {
   list: Pothole[]
   selected?: Pothole
@@ -891,6 +1167,9 @@ function GoogleMap({
   onFocusRoad?: (roadName?: string) => void
   hoveredRoad?: string
   onHoverRoad?: (roadName?: string) => void
+  startDate: string
+  endDate: string
+  onDateRangeChange: (start: string, end: string) => void
 }) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<L.Map>(null)
@@ -1144,75 +1423,15 @@ function GoogleMap({
     <>
       <div ref={el} className="absolute inset-0 z-0" />
 
-      {/* Top Left Status / Inspection Breadcrumb */}
-      <div className="absolute top-3 left-3 z-[400] flex items-center gap-2 rounded-lg border border-[#e4e4e4] bg-white/95 px-3 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur">
-        <span className="relative flex h-2 w-2 shrink-0">
-          <span
-            className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${
-              isDetailLevel ? "bg-primary-400" : "bg-[#c62839]"
-            }`}
-          />
-          <span
-            className={`relative inline-flex h-2 w-2 rounded-full ${
-              isDetailLevel ? "bg-primary-500" : "bg-[#c62839]"
-            }`}
-          />
-        </span>
-        <div className="flex items-center gap-2">
-          {isDetailLevel && (focusedRoad || selected) ? (
-            <>
-              <span className="text-[#3c3c3c]">
-                {selected ? (
-                  <>
-                    Hazard <span className="font-mono text-primary-500 font-medium">{selected.id}</span> ({selected.issueType}) · {selected.road}
-                  </>
-                ) : (
-                  <>
-                    Corridor: <span className="text-primary-500 font-medium">{focusedRoad}</span>
-                  </>
-                )}
-              </span>
-              <button
-                type="button"
-                onClick={resetToCity}
-                className="ml-1 rounded-md border border-[#c7c7c7] bg-white px-2 py-0.5 text-[11px] font-medium text-[#1a1a1a] hover:bg-[#fafafa] transition"
-              >
-                ↩ City View
-              </button>
-            </>
-          ) : (
-            <span>Kanpur GIS Live Feed · 8 Street Corridors · {list.length} hazards</span>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Left Glassmorphic Map Legend */}
-      <div className="absolute bottom-3 left-3 z-[400] rounded-xl border border-[#e4e4e4] bg-white/95 p-2.5 text-xs shadow-sm backdrop-blur select-none max-w-[230px]">
-        <div className="text-[11px] font-medium text-[#4b4b4b] mb-1.5 flex items-center justify-between gap-2 border-b border-[#e4e4e4] pb-1">
-          <span>Corridor Severity</span>
-          <span className="text-[10px] font-mono text-primary-500">
-            {isDetailLevel ? "Level 2: Detail" : "Level 1: Overview"}
-          </span>
-        </div>
-        <div className="flex flex-col gap-1 text-[11px]">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-4 rounded-full shrink-0" style={{ background: SEV.High }} />
-            <span className="text-[#1a1a1a]">High (Critical Damage)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-4 rounded-full shrink-0" style={{ background: SEV.Medium }} />
-            <span className="text-[#1a1a1a]">Medium (Moderate)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-4 rounded-full shrink-0" style={{ background: SEV.Low }} />
-            <span className="text-[#1a1a1a]">Low (Minor Hazards)</span>
-          </div>
-          <div className="flex items-center gap-2 pt-1 border-t border-[#e4e4e4] mt-0.5">
-            <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-dashed border-primary-500 bg-primary-100 shrink-0" />
-            <span className="text-[#3c3c3c] text-[10.5px]">Dashed Ring: Selected Hazard</span>
-          </div>
-        </div>
-      </div>
+      {/* Top Left: Date Range Selector Filter (up to 2 months, default current date) */}
+      <MapDateRangeFilter
+        startDate={startDate}
+        endDate={endDate}
+        onRangeChange={onDateRangeChange}
+        hazardCount={list.length}
+        isDrilledDown={Boolean(focusedRoad || selected)}
+        onResetCityView={resetToCity}
+      />
 
       {/* Bottom Right Map Tile Type Switcher */}
       <div className="absolute bottom-3 right-3 z-[400] flex rounded-lg border border-[#e4e4e4] bg-white/95 p-0.5 text-xs shadow-sm backdrop-blur">
@@ -1239,6 +1458,8 @@ function DetectionPage() {
   const [selectedWard, setSelectedWard] = useState<string>("All")
   const [selectedRoad, setSelectedRoad] = useState<string>("All")
   const [sev, setSev] = useState<Severity | "All">("All")
+  const [startDate, setStartDate] = useState<string>(TODAY_ISO)
+  const [endDate, setEndDate] = useState<string>(TODAY_ISO)
   const [selected, setSelected] = useState<Pothole>()
   const [preview, setPreview] = useState<Pothole>()
   const [viewMode, setViewMode] = useState<"split" | "table">("split")
@@ -1281,9 +1502,11 @@ function DetectionPage() {
       if (selectedWard !== "All" && p.ward !== selectedWard) return false
       if (selectedRoad !== "All" && p.road !== selectedRoad) return false
       if (sev !== "All" && p.severity !== sev) return false
+      if (startDate && p.dateIso < startDate) return false
+      if (endDate && p.dateIso > endDate) return false
       return true
     })
-  }, [selectedZone, selectedWard, selectedRoad, sev])
+  }, [selectedZone, selectedWard, selectedRoad, sev, startDate, endDate])
 
   const selectPin = useMemo(
     () => (p: Pothole) => {
@@ -1460,7 +1683,7 @@ function DetectionPage() {
                   list={list}
                   selected={selected}
                   onSelect={selectPin}
-                  filterKey={`${selectedZone}_${selectedWard}_${selectedRoad}_${sev}`}
+                  filterKey={`${selectedZone}_${selectedWard}_${selectedRoad}_${sev}_${startDate}_${endDate}`}
                   focusedRoad={focusedRoad}
                   onFocusRoad={(r) => {
                     setFocusedRoad(r)
@@ -1468,63 +1691,15 @@ function DetectionPage() {
                   }}
                   hoveredRoad={hoveredRoad}
                   onHoverRoad={setHoveredRoad}
+                  startDate={startDate}
+                  endDate={endDate}
+                  onDateRangeChange={(s, e) => {
+                    setStartDate(s)
+                    setEndDate(e)
+                    setSelected(undefined)
+                  }}
                 />
               </div>
-
-              {/* Quick Selection Banner below map */}
-              {(selected || focusedRoad) && (
-                <div className="flex items-center justify-between rounded-xl border border-primary-200 bg-primary-50/80 p-3.5 shadow-sm text-xs">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ background: selected ? SEV[selected.severity] : "#2563eb" }}
-                    />
-                    <div className="min-w-0">
-                      {selected ? (
-                        <>
-                          <div className="font-medium text-[#1a1a1a] truncate">
-                            {selected.id} ({selected.issueType}) · {selected.road}
-                          </div>
-                          <div className="text-[11px] text-[#3c3c3c]">
-                            Zone {selected.zone} · {selected.ward} · {selected.confidence}% AI Conf.
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="font-medium text-[#1a1a1a] truncate">
-                            Corridor Focus: {focusedRoad}
-                          </div>
-                          <div className="text-[11px] text-[#3c3c3c]">
-                            Inspecting {list.filter((p) => p.road === focusedRoad).length} hazards along this street segment
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {selected && (
-                      <button
-                        type="button"
-                        onClick={() => setPreview(selected)}
-                        className="rounded-lg bg-primary-300 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-primary-400"
-                      >
-                        Evidence
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelected(undefined)
-                        setFocusedRoad(undefined)
-                        if (selectedRoad !== "All") setSelectedRoad("All")
-                      }}
-                      className="rounded-lg border border-[#c7c7c7] px-2 py-1 text-xs font-medium text-[#3c3c3c] hover:bg-white"
-                    >
-                      Clear Focus
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
