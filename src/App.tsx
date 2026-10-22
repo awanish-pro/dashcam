@@ -1342,6 +1342,7 @@ function GoogleMap({
   const markerLayer = useRef<L.LayerGroup>(null)
   const [type, setType] = useState<keyof typeof TILES>("Street")
   const [zoom, setZoom] = useState(12.5)
+  const [showGpsInfo, setShowGpsInfo] = useState(false)
 
   const roadSummaries = useMemo(() => computeRoadSummaries(list), [list])
   const isDetailLevel = zoom >= 14 || Boolean(selected) || Boolean(focusedRoad)
@@ -1596,6 +1597,49 @@ function GoogleMap({
         isDrilledDown={Boolean(focusedRoad || selected)}
         onResetCityView={resetToCity}
       />
+
+      {/* Bottom Left: GPS Accuracy Information Tooltip */}
+      <div
+        className="absolute bottom-3 left-3 z-[400]"
+        onMouseEnter={() => setShowGpsInfo(true)}
+        onMouseLeave={() => setShowGpsInfo(false)}
+      >
+        <button
+          type="button"
+          onClick={() => setShowGpsInfo((prev) => !prev)}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e4e4e4] bg-white shadow-md transition hover:bg-[#fafafa] hover:shadow-lg focus:outline-none cursor-pointer"
+          title="GPS Accuracy Information"
+          aria-label="GPS Accuracy Information"
+        >
+          <svg
+            className="h-4 w-4 text-[#2563eb]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+        </button>
+
+        {/* Tooltip Card */}
+        {showGpsInfo && (
+          <div
+            role="tooltip"
+            className="absolute bottom-0 left-10 z-50 w-[280px] sm:w-[320px] rounded-xl border border-[#e4e4e4] bg-white p-3.5 shadow-xl transition-all animate-in fade-in zoom-in-95 pointer-events-none"
+          >
+            {/* Pointer arrow on left border aligned with icon center */}
+            <div className="absolute -left-[6px] bottom-[10px] h-3 w-3 rotate-45 border-b border-l border-[#e4e4e4] bg-white" />
+            <p className="relative z-10 text-xs font-normal leading-relaxed text-[#2d2d2d]">
+              Locations are approximate and may be inaccurate due to GPS signal interference, obstructions, multipath errors, satellite positioning, or device limitations.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Bottom Right Map Tile Type Switcher */}
       <div className="absolute bottom-3 right-3 z-[400] flex rounded-lg border border-[#e4e4e4] bg-white/95 p-0.5 text-xs shadow-sm backdrop-blur">
