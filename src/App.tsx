@@ -47,11 +47,14 @@ const useT = () => {
 }
 
 type Severity = "High" | "Medium" | "Low"
+type IssueType = "Pothole" | "Garbage"
+
 type Pothole = {
   id: string
   zone: number
   ward: string
   road: string
+  issueType: IssueType
   x: number
   y: number
   lat: number
@@ -75,6 +78,15 @@ type User = {
   wards: string[]
   active: boolean
   last: string
+}
+
+export const KANPUR_WARDS: Record<number, string[]> = {
+  1: ["Civil Lines", "Naveen Market", "Chunni Ganj", "Phool Bagh", "Colonelganj", "Bada Chauraha"],
+  2: ["Kalyanpur", "IIT Kanpur Campus", "Panki", "Indira Nagar", "Vikas Nagar", "Rawatpur"],
+  3: ["Kidwai Nagar", "Juhi", "Babupurwa", "Barra", "Transport Nagar", "Yashoda Nagar"],
+  4: ["Govind Nagar", "Dada Nagar", "Fazalganj", "Shastri Nagar", "Udyog Nagar", "Ratan Lal Nagar"],
+  5: ["Kakadeo", "Swaroop Nagar", "Arya Nagar", "Geeta Nagar", "Sharda Nagar", "Tilak Nagar"],
+  6: ["Chakeri", "Jajmau", "Harjinder Nagar", "Shyam Nagar", "Ramadevi", "Cantt South"],
 }
 
 const ZONES = [
@@ -240,8 +252,22 @@ function computeRoadSummaries(potholes: Pothole[]): Record<string, RoadSummary> 
   return result
 }
 
-const POTHOLES: Pothole[] = Array.from({ length: 64 }, (_, i) => {
-  const road = ROADS[i % ROADS.length]
+const KANPUR_ROADS_ASSIGNED: string[] = [
+  ...Array(10).fill("Mall Road"),
+  ...Array(8).fill("VIP Road"),
+  ...Array(6).fill("Naveen Market Rd"),
+  ...Array(10).fill("GT Road"),
+  ...Array(9).fill("Hamirpur Road"),
+  ...Array(9).fill("Kalpi Road"),
+  ...Array(10).fill("Swaroop Nagar Rd"),
+  ...Array(10).fill("Jajmau Rd"),
+]
+
+const POTHOLES: Pothole[] = Array.from({ length: 72 }, (_, i) => {
+  const road = KANPUR_ROADS_ASSIGNED[i] || ROADS[i % ROADS.length]
+  const zone = ROAD_ZONES[road] || 1
+  const wards = KANPUR_WARDS[zone] || KANPUR_WARDS[1]
+  const ward = wards[i % wards.length]
   const r = rand(i + 7)
   const isHighRoad = road === "GT Road" || road === "Mall Road" || road === "Jajmau Rd"
   const isMedRoad = road === "Hamirpur Road" || road === "Kalpi Road" || road === "Swaroop Nagar Rd"
@@ -254,12 +280,13 @@ const POTHOLES: Pothole[] = Array.from({ length: 64 }, (_, i) => {
     severity = r > 0.95 ? "High" : r > 0.75 ? "Medium" : "Low"
   }
   const pos = pointOnRoad(road, rand(i * 3 + 1), i)
-  const zone = ROAD_ZONES[road] || ((i % 6) + 1)
+  const issueType: IssueType = (i % 4 === 1 || i % 7 === 0) ? "Garbage" : "Pothole"
   return {
     id: `PH-KNP-${String(2400 + i * 7).padStart(5, "0")}`,
     zone,
-    ward: `W-${String(zone * 18 - Math.floor(rand(i + 3) * 17)).padStart(2, "0")}`,
+    ward,
     road,
+    issueType,
     x: 350 + (pos[1] - 80.3319) * 3000,
     y: 200 - (pos[0] - 26.4499) * 4000,
     lat: pos[0],
@@ -288,7 +315,7 @@ const INITIAL_USERS: User[] = [
     role: "Engineer",
     phone: "+91 98390 11223",
     zones: [1],
-    wards: ["W-03", "W-07"],
+    wards: ["Civil Lines", "Naveen Market"],
     active: true,
     last: "2h ago",
   },
@@ -298,7 +325,7 @@ const INITIAL_USERS: User[] = [
     role: "Engineer",
     phone: "+91 94150 22481",
     zones: [2],
-    wards: ["W-21", "W-25"],
+    wards: ["Kalyanpur", "IIT Kanpur Campus"],
     active: true,
     last: "15m ago",
   },
@@ -318,7 +345,7 @@ const INITIAL_USERS: User[] = [
     role: "Engineer",
     phone: "+91 97940 33019",
     zones: [4],
-    wards: ["W-60"],
+    wards: ["Govind Nagar"],
     active: false,
     last: "12d ago",
   },
@@ -328,7 +355,7 @@ const INITIAL_USERS: User[] = [
     role: "Field Staff",
     phone: "+91 90050 87712",
     zones: [5],
-    wards: ["W-77", "W-81"],
+    wards: ["Kakadeo", "Swaroop Nagar"],
     active: true,
     last: "5m ago",
   },
@@ -496,11 +523,7 @@ const idx = (p: Pothole) => {
   const i = POTHOLES.findIndex((x) => x.id === p.id)
   return i >= 0 ? i : 0
 }
-const WARDS = (z: number) =>
-  Array.from(
-    { length: 6 },
-    (_, i) => `W-${String(z * 18 - i * 3).padStart(2, "0")}`,
-  )
+const WARDS = (z: number) => KANPUR_WARDS[z] || []
 
 function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
   const b = SEV_BADGE[p.severity]
@@ -554,15 +577,15 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
 
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm">
             <div className="rounded-lg bg-[#fafafa] p-3 border border-[#e4e4e4]">
-              <div className="text-xs text-[#4b4b4b]">Estimated Area</div>
+              <div className="text-xs text-[#4b4b4b]">Issue Type</div>
               <div className="mt-1 text-base font-medium text-[#1a1a1a]">
-                {p.size} m²
+                {p.issueType}
               </div>
             </div>
             <div className="rounded-lg bg-[#fafafa] p-3 border border-[#e4e4e4]">
-              <div className="text-xs text-[#4b4b4b]">Pothole Depth</div>
-              <div className="mt-1 text-base font-medium text-[#1a1a1a]">
-                {p.depth} cm
+              <div className="text-xs text-[#4b4b4b]">Surface</div>
+              <div className="mt-1 text-base font-medium text-[#4b4b4b]">
+                --
               </div>
             </div>
             <div className="rounded-lg bg-[#fafafa] p-3 border border-[#e4e4e4]">
@@ -572,9 +595,9 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
               </div>
             </div>
             <div className="rounded-lg bg-[#fafafa] p-3 border border-[#e4e4e4]">
-              <div className="text-xs text-[#4b4b4b]">Status</div>
+              <div className="text-xs text-[#4b4b4b]">Vehicle</div>
               <div className="mt-1 text-base font-medium text-[#1a1a1a]">
-                {p.status}
+                {p.vehicle}
               </div>
             </div>
           </div>
@@ -948,10 +971,10 @@ function GoogleMap({
             <div style="display:flex;align-items:center;gap:5px;">
               <span style="font-weight:500;color:#2563eb;">${p.id}</span>
               <span style="color:#c7c7c7;">|</span>
-              <span style="color:${SEV[p.severity]};font-weight:500;">${p.severity} Hazard</span>
+              <span style="color:${SEV[p.severity]};font-weight:500;">${p.issueType} · ${p.severity}</span>
             </div>
             <div style="color:#4b4b4b;font-weight:500;margin-top:1px;">${p.road}, ${p.ward}</div>
-            <div style="color:#3c3c3c;font-size:11px;margin-top:2px;">Depth: ${p.depth} cm · Area: ${p.size} m² · ${p.confidence}% AI Conf.</div>
+            <div style="color:#3c3c3c;font-size:11px;margin-top:2px;">AI Confidence: ${p.confidence}% · ${p.vehicle}</div>
           </div>`,
           { direction: "top", offset: [0, isSel ? -24 : -16] },
         )
@@ -1024,7 +1047,7 @@ function GoogleMap({
               <span className="text-[#3c3c3c]">
                 {selected ? (
                   <>
-                    Hazard <span className="font-mono text-primary-500 font-medium">{selected.id}</span> · {selected.road}
+                    Hazard <span className="font-mono text-primary-500 font-medium">{selected.id}</span> ({selected.issueType}) · {selected.road}
                   </>
                 ) : (
                   <>
@@ -1095,7 +1118,9 @@ function GoogleMap({
 }
 
 function DetectionPage() {
-  const [q, setQ] = useState("")
+  const [selectedZone, setSelectedZone] = useState<string>("1")
+  const [selectedWard, setSelectedWard] = useState<string>("All")
+  const [selectedRoad, setSelectedRoad] = useState<string>("All")
   const [sev, setSev] = useState<Severity | "All">("All")
   const [selected, setSelected] = useState<Pothole>()
   const [preview, setPreview] = useState<Pothole>()
@@ -1103,21 +1128,45 @@ function DetectionPage() {
   const [focusedRoad, setFocusedRoad] = useState<string>()
   const [hoveredRoad, setHoveredRoad] = useState<string>()
 
-  const base = useMemo(
-    () =>
-      POTHOLES.filter(
-        (p) =>
-          !q ||
-            `${p.id} ${p.road} ${p.ward} ${p.engineer} ${p.vehicle}`
-              .toLowerCase()
-              .includes(q.toLowerCase()),
-      ),
-    [q],
-  )
-  const list = useMemo(
-    () => (sev === "All" ? base : base.filter((p) => p.severity === sev)),
-    [base, sev],
-  )
+  // Wards options for Kanpur based on selected Zone
+  const wardOptions: DropdownOption[] = useMemo(() => {
+    const wards =
+      selectedZone === "All"
+        ? Array.from(new Set(Object.values(KANPUR_WARDS).flat()))
+        : KANPUR_WARDS[Number(selectedZone)] || []
+    return [
+      {
+        value: "All",
+        label: selectedZone === "All" ? "All Wards (Kanpur)" : `All Wards (Zone ${selectedZone})`,
+      },
+      ...wards.map((w) => ({ value: w, label: w })),
+    ]
+  }, [selectedZone])
+
+  // Road options for Kanpur based on selected Zone
+  const roadOptions: DropdownOption[] = useMemo(() => {
+    const roads =
+      selectedZone === "All"
+        ? [...ROADS]
+        : ROADS.filter((r) => ROAD_ZONES[r] === Number(selectedZone))
+    return [
+      {
+        value: "All",
+        label: selectedZone === "All" ? "All Roads (Kanpur)" : `All Roads (Zone ${selectedZone})`,
+      },
+      ...roads.map((r) => ({ value: r, label: r })),
+    ]
+  }, [selectedZone])
+
+  const list = useMemo(() => {
+    return POTHOLES.filter((p) => {
+      if (selectedZone !== "All" && String(p.zone) !== selectedZone) return false
+      if (selectedWard !== "All" && p.ward !== selectedWard) return false
+      if (selectedRoad !== "All" && p.road !== selectedRoad) return false
+      if (sev !== "All" && p.severity !== sev) return false
+      return true
+    })
+  }, [selectedZone, selectedWard, selectedRoad, sev])
 
   const selectPin = useMemo(
     () => (p: Pothole) => {
@@ -1142,14 +1191,14 @@ function DetectionPage() {
     },
     {
       l: t("Detections"),
-      v: "0",
-      tag: t("Total"),
+      v: String(list.length),
+      tag: selectedZone === "All" ? t("Total") : `Zone ${selectedZone}`,
       icon: I.eye,
     },
     {
       l: t("Detection Classes"),
-      v: "1",
-      tag: t("Pothole"),
+      v: "2",
+      tag: "Pothole, Garbage",
       icon: I.shapes,
     },
     {
@@ -1185,35 +1234,120 @@ function DetectionPage() {
         ))}
       </div>
 
-      {/* Big white container enclosing Search, Map, and Table */}
+      {/* Big white container enclosing Kanpur Filters, Map, and Table */}
       <div className="rounded-2xl border border-[#e4e4e4] bg-white p-4 sm:p-5 shadow-xs space-y-4">
-        <div className="flex flex-col gap-3 rounded-xl border border-[#e4e4e4] bg-[#fafafa] p-3 sm:flex-row sm:items-center">
-          <SearchBox
-            value={q}
-            onChange={setQ}
-            placeholder={t("Search by pothole ID, road, ward, engineer or vehicle...")}
-            className="flex-1"
-          />
-          <div className="flex items-center gap-1 rounded-lg border border-[#e4e4e4] bg-white p-1">
-            {(["All", "High", "Medium", "Low"] as const).map((s) => (
+        {/* Kanpur Location Filters: Zone (default Zone 1), Ward (Show ward name), Road name */}
+        <div className="flex flex-col gap-3 rounded-xl border border-[#e4e4e4] bg-[#fafafa] p-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-wrap items-end gap-3 flex-1 min-w-0">
+            {/* a. Zone (default Zone 1) */}
+            <div className="w-full sm:w-[190px]">
+              <span className="text-xs font-medium text-[#2d2d2d] mb-1.5 block">
+                Zone (Kanpur)
+              </span>
+              <DropdownSelect
+                value={selectedZone}
+                onChange={(z) => {
+                  setSelectedZone(z)
+                  setSelectedWard("All")
+                  setSelectedRoad("All")
+                  setFocusedRoad(undefined)
+                  setSelected(undefined)
+                }}
+                options={[
+                  { value: "All", label: "All Zones (Kanpur)" },
+                  { value: "1", label: "Zone 1 · Civil Lines" },
+                  { value: "2", label: "Zone 2 · Kalyanpur" },
+                  { value: "3", label: "Zone 3 · Kidwai Nagar" },
+                  { value: "4", label: "Zone 4 · Govind Nagar" },
+                  { value: "5", label: "Zone 5 · Kakadeo" },
+                  { value: "6", label: "Zone 6 · Chakeri" },
+                ]}
+                placeholder="Select Zone"
+              />
+            </div>
+
+            {/* b. Ward (Show ward name) */}
+            <div className="w-full sm:w-[200px]">
+              <span className="text-xs font-medium text-[#2d2d2d] mb-1.5 block">
+                Ward Name
+              </span>
+              <DropdownSelect
+                value={selectedWard}
+                onChange={(w) => {
+                  setSelectedWard(w)
+                  setSelected(undefined)
+                }}
+                options={wardOptions}
+                placeholder="All Wards"
+              />
+            </div>
+
+            {/* c. Road Name */}
+            <div className="w-full sm:w-[200px]">
+              <span className="text-xs font-medium text-[#2d2d2d] mb-1.5 block">
+                Road Name
+              </span>
+              <DropdownSelect
+                value={selectedRoad}
+                onChange={(r) => {
+                  setSelectedRoad(r)
+                  setSelected(undefined)
+                  if (r !== "All") {
+                    setFocusedRoad(r)
+                  } else {
+                    setFocusedRoad(undefined)
+                  }
+                }}
+                options={roadOptions}
+                placeholder="All Roads"
+              />
+            </div>
+
+            {/* Reset Filters button if changed from default */}
+            {(selectedZone !== "1" || selectedWard !== "All" || selectedRoad !== "All" || sev !== "All") && (
               <button
-                key={s}
-                onClick={() => setSev(s)}
-                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                  sev === s
-                    ? "bg-white text-primary-500 shadow-sm border border-[#e4e4e4]"
-                    : "text-[#3c3c3c] hover:text-[#1a1a1a]"
-                }`}
+                type="button"
+                onClick={() => {
+                  setSelectedZone("1")
+                  setSelectedWard("All")
+                  setSelectedRoad("All")
+                  setSev("All")
+                  setFocusedRoad(undefined)
+                  setSelected(undefined)
+                }}
+                className="mb-1 text-xs text-primary-500 hover:text-primary-600 font-medium px-2 py-1.5 rounded-lg border border-[#c7c7c7] bg-white transition hover:bg-[#fafafa]"
               >
-                {s !== "All" && (
-                  <span className="h-2 w-2 rounded-full" style={{ background: SEV[s] }} />
-                )}
-                {t(s)}
-                <span className="text-[11px] text-[#4b4b4b]">
-                  ({s === "All" ? base.length : base.filter((p) => p.severity === s).length})
-                </span>
+                Reset to Zone 1
               </button>
-            ))}
+            )}
+          </div>
+
+          {/* Severity selector */}
+          <div className="flex flex-col sm:items-end shrink-0">
+            <span className="text-xs font-medium text-[#2d2d2d] mb-1.5 block">
+              Severity
+            </span>
+            <div className="flex items-center gap-1 rounded-lg border border-[#e4e4e4] bg-white p-1">
+              {(["All", "High", "Medium", "Low"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSev(s)}
+                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+                    sev === s
+                      ? "bg-white text-primary-500 shadow-sm border border-[#e4e4e4]"
+                      : "text-[#3c3c3c] hover:text-[#1a1a1a]"
+                  }`}
+                >
+                  {s !== "All" && (
+                    <span className="h-2 w-2 rounded-full" style={{ background: SEV[s] }} />
+                  )}
+                  {t(s)}
+                  <span className="text-[11px] text-[#4b4b4b]">
+                    ({s === "All" ? list.length : list.filter((p) => p.severity === s).length})
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -1227,9 +1361,12 @@ function DetectionPage() {
                   list={list}
                   selected={selected}
                   onSelect={selectPin}
-                  filterKey={`${sev}_${q}`}
+                  filterKey={`${selectedZone}_${selectedWard}_${selectedRoad}_${sev}`}
                   focusedRoad={focusedRoad}
-                  onFocusRoad={setFocusedRoad}
+                  onFocusRoad={(r) => {
+                    setFocusedRoad(r)
+                    if (r) setSelectedRoad(r)
+                  }}
                   hoveredRoad={hoveredRoad}
                   onHoverRoad={setHoveredRoad}
                 />
@@ -1247,10 +1384,10 @@ function DetectionPage() {
                       {selected ? (
                         <>
                           <div className="font-medium text-[#1a1a1a] truncate">
-                            {selected.id} · {selected.road}
+                            {selected.id} ({selected.issueType}) · {selected.road}
                           </div>
                           <div className="text-[11px] text-[#3c3c3c]">
-                            Zone {selected.zone} · {selected.ward} · {selected.size} m² ({selected.depth} cm depth)
+                            Zone {selected.zone} · {selected.ward} · {selected.confidence}% AI Conf.
                           </div>
                         </>
                       ) : (
@@ -1280,6 +1417,7 @@ function DetectionPage() {
                       onClick={() => {
                         setSelected(undefined)
                         setFocusedRoad(undefined)
+                        if (selectedRoad !== "All") setSelectedRoad("All")
                       }}
                       className="rounded-lg border border-[#c7c7c7] px-2 py-1 text-xs font-medium text-[#3c3c3c] hover:bg-white"
                     >
@@ -1336,14 +1474,13 @@ function DetectionPage() {
                 <thead className="sticky top-0 z-10 border-b border-[#e4e4e4] bg-[#fafafa] text-left text-xs font-medium text-[#3c3c3c]">
                   <tr>
                     {[
-                      "Photo",
                       "Pothole ID",
+                      "Issue Type",
                       "Severity",
                       "Road & Ward",
                       "Zone",
                       "Surface",
                       "AI Conf.",
-                      "Status",
                       "Actions",
                     ].map((h) => (
                       <th
@@ -1378,26 +1515,7 @@ function DetectionPage() {
                               : "hover:bg-[#fafafa]"
                         }`}
                       >
-                        {/* Photo Thumbnail */}
-                        <td className="px-3 py-2.5">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setPreview(p)
-                            }}
-                            className="block overflow-hidden rounded-md border border-[#e4e4e4] transition hover:border-primary-300 hover:shadow"
-                          >
-                            <img
-                              src={img(idx(p), 140)}
-                              alt={`Pothole ${p.id}`}
-                              loading="lazy"
-                              className="h-10 w-14 object-cover"
-                            />
-                          </button>
-                        </td>
-
-                        {/* ID */}
+                        {/* Pothole ID */}
                         <td className="whitespace-nowrap px-3.5 py-2.5">
                           <div className="font-mono text-xs font-medium text-[#1a1a1a]">
                             {p.id}
@@ -1405,6 +1523,21 @@ function DetectionPage() {
                           <div className="text-[11px] text-[#4b4b4b]">
                             {p.detected.split(",")[0]}
                           </div>
+                        </td>
+
+                        {/* Issue Type */}
+                        <td className="whitespace-nowrap px-3.5 py-2.5">
+                          {p.issueType === "Garbage" ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#f7e1b0] bg-[#fef9f1] px-2.5 py-0.5 text-xs font-medium text-[#8a5f00]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#e69f00]" />
+                              Garbage
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-500">
+                              <span className="h-1.5 w-1.5 rounded-full bg-primary-300" />
+                              Pothole
+                            </span>
+                          )}
                         </td>
 
                         {/* Severity */}
@@ -1442,35 +1575,15 @@ function DetectionPage() {
                           Zone {p.zone}
                         </td>
 
-                        {/* Surface / Dimensions */}
+                        {/* Surface */}
                         <td className="whitespace-nowrap px-3.5 py-2.5 tabular-nums">
-                          <div className="text-xs font-medium text-[#1a1a1a]">
-                            {p.size} m²
-                          </div>
-                          <div className="text-[11px] text-[#4b4b4b]">
-                            {p.depth} cm depth
-                          </div>
+                          <span className="text-xs font-medium text-[#4b4b4b]" title="Surface data API in progress">--</span>
                         </td>
 
                         {/* AI Confidence */}
                         <td className="whitespace-nowrap px-3.5 py-2.5 tabular-nums">
                           <span className="text-xs font-medium text-[#1a1a1a]">
                             {p.confidence}%
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="whitespace-nowrap px-3.5 py-2.5">
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                              p.status === "New"
-                                ? "border-primary-200 bg-primary-100 text-primary-500"
-                                : p.status === "Verified"
-                                  ? "border-[#b5d8d1] bg-[#dbece9] text-[#0a4d40]"
-                                  : "border-[#e4e4e4] bg-[#fafafa] text-[#4b4b4b]"
-                            }`}
-                          >
-                            {p.status}
                           </span>
                         </td>
 
@@ -1508,11 +1621,10 @@ function DetectionPage() {
                   {!list.length && (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={8}
                         className="py-12 text-center text-sm text-[#4b4b4b]"
                       >
-                        No potholes match your selected filters. Try clearing
-                        filters or search.
+                        No hazards match your selected Zone, Ward, Road, or Severity filters. Try resetting filters.
                       </td>
                     </tr>
                   )}
@@ -2366,15 +2478,6 @@ export default function App() {
             <p className="text-xs text-[#3c3c3c]">
               {t(cur.d)} · {t("Kanpur Nagar Nigam")}
             </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="relative rounded-lg border border-[#e4e4e4] bg-white p-2 text-[#2d2d2d] transition hover:bg-[#fafafa]"
-            >
-              <Icon d={I.bell} />
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary-300" />
-            </button>
           </div>
         </header>
 
