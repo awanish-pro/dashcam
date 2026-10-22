@@ -509,7 +509,7 @@ const I = {
   check: "m5 13 4 4L19 7",
 }
 
-const IMGS = [
+const POTHOLE_IMGS = [
   "1784548789954-655c9a9e1a64",
   "1694804304298-c79443f5e2f4",
   "1709934730506-fba12664d4e4",
@@ -517,13 +517,130 @@ const IMGS = [
   "1623500673097-c277c8622cf2",
   "1658223684971-f262da87168f",
 ]
-const img = (i: number, w = 400) =>
-  `https://images.unsplash.com/photo-${IMGS[i % IMGS.length]}?auto=format&fit=crop&w=${w}&h=${Math.round(w * 0.75)}&q=70`
+
+const GARBAGE_IMGS = [
+  "1532996122724-e3c354a0b15b",
+  "1605600659908-0ef719419d41",
+  "1611284446314-60a58ac0deb9",
+  "1528323273322-d81458248d40",
+]
+
+const getEvidenceImg = (p: Pothole, w = 400) => {
+  const i = POTHOLES.findIndex((x) => x.id === p.id)
+  const idxVal = i >= 0 ? i : 0
+  if (p.issueType === "Garbage") {
+    const id = GARBAGE_IMGS[idxVal % GARBAGE_IMGS.length]
+    return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&h=${Math.round(w * 0.75)}&q=70`
+  }
+  const id = POTHOLE_IMGS[idxVal % POTHOLE_IMGS.length]
+  return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&h=${Math.round(w * 0.75)}&q=70`
+}
+
 const idx = (p: Pothole) => {
   const i = POTHOLES.findIndex((x) => x.id === p.id)
   return i >= 0 ? i : 0
 }
 const WARDS = (z: number) => KANPUR_WARDS[z] || []
+
+function IssueTypeCell({
+  p,
+  onOpenPreview,
+  rowIndex,
+}: {
+  p: Pothole
+  onOpenPreview: () => void
+  rowIndex?: number
+}) {
+  const [showPopup, setShowPopup] = useState(false)
+  const timeoutRef = useRef<any>(null)
+  const cellRef = useRef<HTMLDivElement>(null)
+
+  const handleEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    setShowPopup(true)
+  }
+
+  const handleLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setShowPopup(false)
+    }, 180)
+  }
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    setShowPopup((prev) => !prev)
+  }
+
+  useEffect(() => {
+    const handleDocClick = (e: MouseEvent) => {
+      if (cellRef.current && !cellRef.current.contains(e.target as Node)) {
+        setShowPopup(false)
+      }
+    }
+    if (showPopup) {
+      document.addEventListener("click", handleDocClick)
+    }
+    return () => {
+      document.removeEventListener("click", handleDocClick)
+    }
+  }, [showPopup])
+
+  const openDownward = typeof rowIndex === "number" && rowIndex < 3
+
+  return (
+    <div
+      ref={cellRef}
+      className="relative inline-block"
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+    >
+      <button
+        type="button"
+        onClick={handleClick}
+        title={`Click or hover to preview ${p.issueType} photo`}
+        className="group inline-flex items-center gap-1 text-xs font-medium text-[#1a1a1a] hover:text-primary-500 transition text-left cursor-pointer focus:outline-none"
+      >
+        <span className="underline decoration-dotted underline-offset-4 decoration-[#c7c7c7] group-hover:decoration-primary-400 group-hover:text-primary-500">
+          {p.issueType}
+        </span>
+      </button>
+
+      {showPopup && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenPreview()
+          }}
+          className={`absolute left-0 z-50 w-64 rounded-xl border border-[#e4e4e4] bg-white p-2 shadow-2xl backdrop-blur transition-all duration-150 animate-in fade-in zoom-in-95 cursor-pointer pointer-events-auto ${
+            openDownward ? "top-full mt-2" : "bottom-full mb-2"
+          }`}
+        >
+          <div className="relative overflow-hidden rounded-lg aspect-[16/10] bg-[#fafafa]">
+            <img
+              src={getEvidenceImg(p, 480)}
+              alt={`${p.issueType} detection`}
+              className="h-full w-full object-cover transition duration-300 hover:scale-105"
+            />
+            <div className="absolute top-1.5 left-1.5 rounded-md bg-[#1a1a1a]/85 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur">
+              {p.issueType}
+            </div>
+            <div className="absolute top-1.5 right-1.5 rounded-md bg-primary-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur">
+              {p.confidence}% AI
+            </div>
+            <div className="absolute bottom-1.5 left-1.5 right-1.5 rounded-md bg-[#1a1a1a]/80 px-2 py-1 text-[10px] text-white backdrop-blur truncate">
+              {p.road} · {p.ward}
+            </div>
+          </div>
+          <div className="mt-1.5 flex items-center justify-between px-1 text-[10.5px]">
+            <span className="font-mono text-[#6e6e6e]">{p.id}</span>
+            <span className="text-primary-500 font-medium hover:underline">Click to enlarge ↗</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
   const b = SEV_BADGE[p.severity]
@@ -538,8 +655,8 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
       >
         <div className="relative">
           <img
-            src={img(idx(p), 1000)}
-            alt={`Evidence photo for pothole ${p.id}`}
+            src={getEvidenceImg(p, 1000)}
+            alt={`Evidence photo for ${p.issueType} ${p.id}`}
             className="aspect-[16/9] w-full object-cover"
           />
           <div className="absolute left-3 top-3 flex items-center gap-2 rounded-lg bg-[#1a1a1a]/80 px-2.5 py-1 text-xs text-white backdrop-blur">
@@ -1302,24 +1419,6 @@ function DetectionPage() {
                 placeholder="All Roads"
               />
             </div>
-
-            {/* Reset Filters button if changed from default */}
-            {(selectedZone !== "1" || selectedWard !== "All" || selectedRoad !== "All" || sev !== "All") && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedZone("1")
-                  setSelectedWard("All")
-                  setSelectedRoad("All")
-                  setSev("All")
-                  setFocusedRoad(undefined)
-                  setSelected(undefined)
-                }}
-                className="mb-1 text-xs text-primary-500 hover:text-primary-600 font-medium px-2 py-1.5 rounded-lg border border-[#c7c7c7] bg-white transition hover:bg-[#fafafa]"
-              >
-                Reset to Zone 1
-              </button>
-            )}
           </div>
 
           {/* Severity selector */}
@@ -1474,26 +1573,27 @@ function DetectionPage() {
                 <thead className="sticky top-0 z-10 border-b border-[#e4e4e4] bg-[#fafafa] text-left text-xs font-medium text-[#3c3c3c]">
                   <tr>
                     {[
-                      "Pothole ID",
-                      "Issue Type",
-                      "Severity",
-                      "Road & Ward",
-                      "Zone",
-                      "Surface",
-                      "AI Conf.",
-                      "Actions",
-                    ].map((h) => (
+                      { key: "issue", label: "Issue Type", align: "text-left" },
+                      { key: "id", label: "ID", align: "text-left" },
+                      { key: "datetime", label: "Date & Time", align: "text-left" },
+                      { key: "severity", label: "Severity", align: "text-left" },
+                      { key: "location", label: "Road & Ward", align: "text-left" },
+                      { key: "zone", label: "Zone", align: "text-left" },
+                      { key: "surface", label: "Surface", align: "text-center" },
+                      { key: "confidence", label: "AI Conf.", align: "text-left" },
+                      { key: "actions", label: "Actions", align: "text-left" },
+                    ].map((col) => (
                       <th
-                        key={h}
-                        className="whitespace-nowrap px-3.5 py-3 font-medium"
+                        key={col.key}
+                        className={`whitespace-nowrap px-3.5 py-3 font-medium ${col.align}`}
                       >
-                        {h}
+                        {col.label}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e4e4e4] text-[#2d2d2d]">
-                  {list.map((p) => {
+                  {list.map((p, rowIdx) => {
                     const isSel = selected?.id === p.id
                     const isRoadMatch = !isSel && (hoveredRoad === p.road || focusedRoad === p.road)
                     const badge = SEV_BADGE[p.severity]
@@ -1515,32 +1615,33 @@ function DetectionPage() {
                               : "hover:bg-[#fafafa]"
                         }`}
                       >
-                        {/* Pothole ID */}
+                        {/* 1. Issue Type (simple text, hover/click popup) */}
+                        <td className="whitespace-nowrap px-3.5 py-2.5">
+                          <IssueTypeCell
+                            p={p}
+                            rowIndex={rowIdx}
+                            onOpenPreview={() => setPreview(p)}
+                          />
+                        </td>
+
+                        {/* 2. ID */}
                         <td className="whitespace-nowrap px-3.5 py-2.5">
                           <div className="font-mono text-xs font-medium text-[#1a1a1a]">
                             {p.id}
                           </div>
-                          <div className="text-[11px] text-[#4b4b4b]">
+                        </td>
+
+                        {/* 3. Date & Time */}
+                        <td className="whitespace-nowrap px-3.5 py-2.5">
+                          <div className="text-xs font-medium text-[#1a1a1a]">
                             {p.detected.split(",")[0]}
+                          </div>
+                          <div className="text-[11px] text-[#4b4b4b]">
+                            {p.detected.split(",")[1]?.trim() || "09:30 AM"}
                           </div>
                         </td>
 
-                        {/* Issue Type */}
-                        <td className="whitespace-nowrap px-3.5 py-2.5">
-                          {p.issueType === "Garbage" ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#f7e1b0] bg-[#fef9f1] px-2.5 py-0.5 text-xs font-medium text-[#8a5f00]">
-                              <span className="h-1.5 w-1.5 rounded-full bg-[#e69f00]" />
-                              Garbage
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-500">
-                              <span className="h-1.5 w-1.5 rounded-full bg-primary-300" />
-                              Pothole
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Severity */}
+                        {/* 4. Severity */}
                         <td className="whitespace-nowrap px-3.5 py-2.5">
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${badge.bg} ${badge.text} ${badge.border}`}
@@ -1553,7 +1654,7 @@ function DetectionPage() {
                           </span>
                         </td>
 
-                        {/* Road & Ward */}
+                        {/* 5. Road & Ward */}
                         <td className="whitespace-nowrap px-3.5 py-2.5">
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-medium text-[#1a1a1a]">
@@ -1570,24 +1671,26 @@ function DetectionPage() {
                           </div>
                         </td>
 
-                        {/* Zone */}
+                        {/* 6. Zone */}
                         <td className="whitespace-nowrap px-3.5 py-2.5 text-xs">
                           Zone {p.zone}
                         </td>
 
-                        {/* Surface */}
-                        <td className="whitespace-nowrap px-3.5 py-2.5 tabular-nums">
-                          <span className="text-xs font-medium text-[#4b4b4b]" title="Surface data API in progress">--</span>
+                        {/* 7. Surface (dash centered) */}
+                        <td className="whitespace-nowrap px-3.5 py-2.5 text-center">
+                          <span className="text-xs font-medium text-[#4b4b4b] inline-block text-center" title="Surface data API in progress">
+                            --
+                          </span>
                         </td>
 
-                        {/* AI Confidence */}
+                        {/* 8. AI Confidence */}
                         <td className="whitespace-nowrap px-3.5 py-2.5 tabular-nums">
                           <span className="text-xs font-medium text-[#1a1a1a]">
                             {p.confidence}%
                           </span>
                         </td>
 
-                        {/* Actions */}
+                        {/* 9. Actions */}
                         <td className="whitespace-nowrap px-3.5 py-2.5">
                           <div className="flex items-center gap-1.5">
                             <button
@@ -1621,10 +1724,10 @@ function DetectionPage() {
                   {!list.length && (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className="py-12 text-center text-sm text-[#4b4b4b]"
                       >
-                        No hazards match your selected Zone, Ward, Road, or Severity filters. Try resetting filters.
+                        No hazards match your selected Zone, Ward, Road, or Severity filters.
                       </td>
                     </tr>
                   )}
