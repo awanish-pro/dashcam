@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
@@ -591,6 +592,188 @@ const idx = (p: Pothole) => {
 }
 const WARDS = (z: number) => KANPUR_WARDS[z] || []
 
+function IssueInfoTooltip() {
+  const [show, setShow] = useState(false)
+  const [coords, setCoords] = useState<{
+    left: number
+    top: number
+    arrowLeft: number
+    openDownward: boolean
+  } | null>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const tipRef = useRef<HTMLDivElement>(null)
+  const timeoutRef = useRef<any>(null)
+
+  const updatePosition = () => {
+    if (!buttonRef.current) return
+    const rect = buttonRef.current.getBoundingClientRect()
+    const tooltipWidth = Math.min(325, window.innerWidth - 24)
+    // Position tooltip card so arrow (at ~65% from left) aligns with the (i) icon
+    let left = rect.left + rect.width / 2 - 210
+    if (left < 12) left = 12
+    if (left + tooltipWidth > window.innerWidth - 12) {
+      left = window.innerWidth - tooltipWidth - 12
+    }
+    const arrowLeft = Math.max(
+      16,
+      Math.min(tooltipWidth - 24, rect.left + rect.width / 2 - left - 6)
+    )
+
+    // Open downward if there is enough space below; otherwise open upward
+    const spaceBelow = window.innerHeight - rect.bottom
+    const openDownward = spaceBelow >= 240 || rect.top < 240
+    const top = openDownward ? rect.bottom + 8 : rect.top - 8
+
+    setCoords({ left, top, arrowLeft, openDownward })
+  }
+
+  const handleEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    updatePosition()
+    setShow(true)
+  }
+
+  const handleLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setShow(false)
+    }, 220)
+  }
+
+  useEffect(() => {
+    if (!show) return
+    const handleEvents = (e: MouseEvent) => {
+      if (
+        tipRef.current &&
+        !tipRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        setShow(false)
+      }
+    }
+    const handleScrollOrResize = () => {
+      updatePosition()
+    }
+
+    document.addEventListener("mousedown", handleEvents)
+    window.addEventListener("scroll", handleScrollOrResize, true)
+    window.addEventListener("resize", handleScrollOrResize)
+    return () => {
+      document.removeEventListener("mousedown", handleEvents)
+      window.removeEventListener("scroll", handleScrollOrResize, true)
+      window.removeEventListener("resize", handleScrollOrResize)
+    }
+  }, [show])
+
+  return (
+    <span className="inline-flex items-center">
+      <button
+        ref={buttonRef}
+        type="button"
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (timeoutRef.current) clearTimeout(timeoutRef.current)
+          if (!show) updatePosition()
+          setShow((v) => !v)
+        }}
+        aria-expanded={show}
+        aria-label="Disclaimer: Pothole dimensions & research references"
+        title="Disclaimer: Pothole dimensions & research references"
+        className="flex items-center justify-center h-4 w-4 rounded-full text-[#6e6e6e] hover:text-[#1a1a1a] transition cursor-pointer focus:outline-none"
+      >
+        <svg
+          className="h-3.5 w-3.5 text-[#6e6e6e] hover:text-[#1a1a1a] transition"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
+      </button>
+
+      {show &&
+        coords &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={tipRef}
+            role="tooltip"
+            onMouseEnter={() => {
+              if (timeoutRef.current) clearTimeout(timeoutRef.current)
+            }}
+            onMouseLeave={handleLeave}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "fixed",
+              left: `${coords.left}px`,
+              top: `${coords.top}px`,
+              transform: coords.openDownward ? "none" : "translateY(-100%)",
+              zIndex: 99999,
+            }}
+            className="w-[325px] max-w-[calc(100vw-24px)] rounded-xl bg-[#525252] p-4 text-left text-white shadow-2xl transition-all duration-150 animate-in fade-in zoom-in-95 pointer-events-auto"
+          >
+            {/* Pointer arrow aligned precisely with the (i) icon */}
+            <div
+              style={{ left: `${coords.arrowLeft}px` }}
+              className={`absolute h-3 w-3 rotate-45 bg-[#525252] ${
+                coords.openDownward ? "-top-1.5" : "-bottom-1.5"
+              }`}
+            />
+
+            <div className="relative z-10 space-y-2.5">
+              <div>
+                <div className="text-xs font-medium text-white">Disclaimer:</div>
+                <p className="mt-1 text-[11.5px] font-normal leading-relaxed text-white/90">
+                  Pothole dimensions shown are estimated based on methodologies reported in published research and may vary from actual measurements.
+                </p>
+              </div>
+
+              <div>
+                <div className="text-xs font-medium text-white">Research References:</div>
+                <div className="mt-1.5 space-y-1.5 text-[11px] font-normal">
+                  <div className="flex items-start gap-1">
+                    <span className="text-white/80 shrink-0">1.</span>
+                    <a
+                      href="https://www.mdpi.com/2079-9292/12/4/826"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#72b5ff] hover:text-[#9cd0ff] underline break-all leading-snug"
+                    >
+                      https://www.mdpi.com/2079-9292/12/4/826
+                    </a>
+                  </div>
+                  <div className="flex items-start gap-1">
+                    <span className="text-white/80 shrink-0">2.</span>
+                    <a
+                      href="https://www.researchgate.net/publication/405297436_Pothole_Detection_and_Cost_Estimation_Using_Deep_Learning"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#72b5ff] hover:text-[#9cd0ff] underline break-all leading-snug"
+                    >
+                      https://www.researchgate.net/publication/405297436_Pothole_Detection_and_Cost_Estimation_Using_Deep_Learning
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <p className="pt-0.5 text-[10.5px] italic font-normal text-white/70 leading-normal">
+                (More research will affect how we estimate dimensions and other aspects of detections)
+              </p>
+            </div>
+          </div>,
+          document.body
+        )}
+    </span>
+  )
+}
+
 function IssueTypeCell({
   p,
   onOpenPreview,
@@ -638,55 +821,68 @@ function IssueTypeCell({
   const openDownward = typeof rowIndex === "number" && rowIndex < 3
 
   return (
-    <div
-      ref={cellRef}
-      className="relative inline-block"
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
-    >
-      <button
-        type="button"
-        onClick={handleClick}
-        title={`Click or hover to preview ${p.issueType} photo`}
-        className="group inline-flex items-center gap-1 text-xs font-medium text-primary-500 hover:text-primary-600 transition text-left cursor-pointer focus:outline-none"
-      >
-        <span className="underline decoration-dotted underline-offset-4 decoration-primary-300 group-hover:decoration-primary-500">
-          {p.issueType}
-        </span>
-      </button>
+    <div className="inline-flex items-center gap-2">
+      {/* Red / severity status dot */}
+      <span
+        className="h-1.5 w-1.5 rounded-full inline-block shrink-0"
+        style={{ background: SEV[p.severity] }}
+        title={`${p.severity} Severity`}
+      />
 
-      {showPopup && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpenPreview()
-          }}
-          className={`absolute left-0 z-50 w-64 rounded-xl border border-[#e4e4e4] bg-white p-2 shadow-2xl backdrop-blur transition-all duration-150 animate-in fade-in zoom-in-95 cursor-pointer pointer-events-auto ${
-            openDownward ? "top-full mt-2" : "bottom-full mb-2"
-          }`}
+      {/* Issue type link with hover photo preview */}
+      <div
+        ref={cellRef}
+        className="relative inline-block"
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+      >
+        <button
+          type="button"
+          onClick={handleClick}
+          title={`Click or hover to preview ${p.issueType} photo`}
+          className="group inline-flex items-center gap-1 text-xs font-medium text-primary-500 hover:text-primary-600 transition text-left cursor-pointer focus:outline-none"
         >
-          <div className="relative overflow-hidden rounded-lg aspect-[16/10] bg-[#fafafa]">
-            <img
-              src={getEvidenceImg(p, 480)}
-              alt={`${p.issueType} detection`}
-              className="h-full w-full object-cover transition duration-300 hover:scale-105"
-            />
-            <div className="absolute top-1.5 left-1.5 rounded-md bg-[#1a1a1a]/85 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur">
-              {p.issueType}
+          <span className="underline decoration-dotted underline-offset-4 decoration-primary-300 group-hover:decoration-primary-500">
+            {p.issueType}
+          </span>
+        </button>
+
+        {showPopup && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenPreview()
+            }}
+            className={`absolute left-0 z-50 w-64 rounded-xl border border-[#e4e4e4] bg-white p-2 shadow-2xl backdrop-blur transition-all duration-150 animate-in fade-in zoom-in-95 cursor-pointer pointer-events-auto ${
+              openDownward ? "top-full mt-2" : "bottom-full mb-2"
+            }`}
+          >
+            <div className="relative overflow-hidden rounded-lg aspect-[16/10] bg-[#fafafa]">
+              <img
+                src={getEvidenceImg(p, 480)}
+                alt={`${p.issueType} detection`}
+                className="h-full w-full object-cover transition duration-300 hover:scale-105"
+              />
+              <div className="absolute top-1.5 left-1.5 rounded-md bg-[#1a1a1a]/85 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur">
+                {p.issueType}
+              </div>
+              <div className="absolute top-1.5 right-1.5 rounded-md bg-primary-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur">
+                {p.confidence}% AI
+              </div>
+              <div className="absolute bottom-1.5 left-1.5 right-1.5 rounded-md bg-[#1a1a1a]/80 px-2 py-1 text-[10px] text-white backdrop-blur truncate">
+                {p.road} · {p.ward}
+              </div>
             </div>
-            <div className="absolute top-1.5 right-1.5 rounded-md bg-primary-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur">
-              {p.confidence}% AI
-            </div>
-            <div className="absolute bottom-1.5 left-1.5 right-1.5 rounded-md bg-[#1a1a1a]/80 px-2 py-1 text-[10px] text-white backdrop-blur truncate">
-              {p.road} · {p.ward}
+            <div className="mt-1.5 flex items-center justify-between px-1 text-[10.5px]">
+              <span className="text-[#6e6e6e] truncate max-w-[140px]">{p.road}</span>
+              <span className="text-primary-500 font-medium hover:underline">Click to enlarge ↗</span>
             </div>
           </div>
-          <div className="mt-1.5 flex items-center justify-between px-1 text-[10.5px]">
-            <span className="text-[#6e6e6e] truncate max-w-[140px]">{p.road}</span>
-            <span className="text-primary-500 font-medium hover:underline">Click to enlarge ↗</span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* Information icon (i) with research disclaimer tooltip */}
+      <IssueInfoTooltip />
     </div>
   )
 }
