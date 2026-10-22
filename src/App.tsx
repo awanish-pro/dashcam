@@ -692,15 +692,34 @@ function IssueTypeCell({
 
 function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
   const b = SEV_BADGE[p.severity]
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [onClose])
+
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-[#1a1a1a]/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-[#1a1a1a]/60 p-4 backdrop-blur-sm overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl overflow-hidden rounded-2xl border border-[#e4e4e4] bg-white shadow-2xl"
+        className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-[#e4e4e4] bg-white shadow-2xl animate-in fade-in zoom-in-95 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Top-Right Cross Icon */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3.5 top-3.5 z-30 flex items-center justify-center h-8 w-8 rounded-full bg-[#1a1a1a]/75 hover:bg-[#1a1a1a] text-white transition shadow-md backdrop-blur cursor-pointer"
+          title="Close (Esc)"
+        >
+          <Icon d={I.x} className="h-4 w-4" />
+        </button>
+
         <div className="relative">
           <img
             src={getEvidenceImg(p, 1000)}
@@ -714,12 +733,6 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
             <span>·</span>
             <span>{p.vehicle}</span>
           </div>
-          <button
-            onClick={onClose}
-            className="absolute right-3 top-3 rounded-full bg-[#1a1a1a]/80 p-1.5 text-white transition hover:bg-[#1a1a1a]"
-          >
-            <Icon d={I.x} className="h-4 w-4" />
-          </button>
         </div>
         <div className="p-6">
           <div className="flex items-center justify-between border-b border-[#e4e4e4] pb-4">
@@ -788,21 +801,6 @@ function Preview({ p, onClose }: { p: Pothole; onClose: () => void }) {
                 {p.passes} verification passes
               </span>
             </div>
-          </div>
-
-          <div className="mt-6 flex justify-end gap-3 border-t border-[#e4e4e4] pt-4">
-            <button
-              onClick={onClose}
-              className="rounded-lg border border-[#c7c7c7] px-4 py-2 text-sm font-medium text-[#2d2d2d] transition hover:bg-[#fafafa]"
-            >
-              Close
-            </button>
-            <button
-              onClick={onClose}
-              className="rounded-lg bg-primary-300 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-400 active:bg-primary-500"
-            >
-              Dispatch Work Order
-            </button>
           </div>
         </div>
       </div>
