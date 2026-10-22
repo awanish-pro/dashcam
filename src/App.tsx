@@ -921,6 +921,139 @@ function SearchBox({
 
 const TILES = { Street: "m", Satellite: "y" } as const
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+]
+
+function MonthCard({
+  year,
+  month,
+  effStart,
+  effEnd,
+  onDateClick,
+  onDateHover,
+  onPrevMonth,
+  onNextMonth,
+  canPrev,
+  canNext,
+}: {
+  year: number
+  month: number
+  effStart: string
+  effEnd: string
+  onDateClick: (d: string) => void
+  onDateHover: (d: string) => void
+  onPrevMonth?: () => void
+  onNextMonth?: () => void
+  canPrev?: boolean
+  canNext?: boolean
+}) {
+  const firstDay = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+  return (
+    <div className="rounded-xl border border-[#e4e4e4] bg-[#fafafa]/60 p-3 shadow-2xs">
+      {/* Month Header */}
+      <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-[#e4e4e4]">
+        {onPrevMonth ? (
+          <button
+            type="button"
+            disabled={!canPrev}
+            onClick={onPrevMonth}
+            className={`p-1 rounded-md text-[#4b4b4b] hover:bg-white hover:text-[#1a1a1a] transition ${
+              !canPrev ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+            }`}
+            title="Previous Month"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        ) : (
+          <div className="w-5" />
+        )}
+        <span className="text-xs font-medium text-[#1a1a1a]">
+          {MONTH_NAMES[month]} {year}
+        </span>
+        {onNextMonth ? (
+          <button
+            type="button"
+            disabled={!canNext}
+            onClick={onNextMonth}
+            className={`p-1 rounded-md text-[#4b4b4b] hover:bg-white hover:text-[#1a1a1a] transition ${
+              !canNext ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+            }`}
+            title="Next Month"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        ) : (
+          <div className="w-5" />
+        )}
+      </div>
+
+      {/* Weekday Labels */}
+      <div className="grid grid-cols-7 gap-1 mb-1 text-center">
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+          <div key={day} className="text-[10px] font-medium text-[#6e6e6e] py-0.5">
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Days Grid */}
+      <div className="grid grid-cols-7 gap-y-1 text-center">
+        {Array.from({ length: firstDay }).map((_, idx) => (
+          <div key={`empty-${idx}`} className="h-7 w-7" />
+        ))}
+        {Array.from({ length: daysInMonth }, (_, idx) => {
+          const day = idx + 1
+          const dateIso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+          const isStart = dateIso === effStart
+          const isEnd = dateIso === effEnd
+          const isInRange = dateIso > effStart && dateIso < effEnd
+          const isToday = dateIso === TODAY_ISO
+          const isFuture = dateIso > TODAY_ISO
+
+          return (
+            <div
+              key={dateIso}
+              className={`h-7 flex items-center justify-center relative ${
+                isInRange ? "bg-primary-100" : ""
+              } ${isStart && !isEnd ? "bg-gradient-to-r from-transparent to-primary-100 rounded-l-full" : ""} ${
+                isEnd && !isStart ? "bg-gradient-to-l from-transparent to-primary-100 rounded-r-full" : ""
+              }`}
+            >
+              <button
+                type="button"
+                disabled={isFuture}
+                onClick={() => onDateClick(dateIso)}
+                onMouseEnter={() => onDateHover(dateIso)}
+                className={`h-7 w-7 flex items-center justify-center text-[11px] font-medium transition cursor-pointer ${
+                  isStart || isEnd
+                    ? "bg-primary-500 text-white rounded-full shadow-xs ring-2 ring-primary-300"
+                    : isInRange
+                      ? "text-primary-700 hover:bg-primary-200 rounded-none"
+                      : isFuture
+                        ? "text-[#c7c7c7] cursor-not-allowed"
+                        : isToday
+                          ? "text-primary-600 ring-1 ring-primary-400 rounded-full hover:bg-primary-50"
+                          : "text-[#1a1a1a] hover:bg-[#e4e4e4] rounded-full"
+                }`}
+              >
+                {day}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function MapDateRangeFilter({
   startDate,
   endDate,
@@ -939,11 +1072,22 @@ function MapDateRangeFilter({
   const [isOpen, setIsOpen] = useState(false)
   const [tempStart, setTempStart] = useState(startDate)
   const [tempEnd, setTempEnd] = useState(endDate)
+  const [hoverDate, setHoverDate] = useState<string | null>(null)
+  const [rangeStep, setRangeStep] = useState<"start" | "end">("start")
+
+  // Left card default: September 2026 (month index 8), right card: October 2026 (month index 9)
+  const [leftYear, setLeftYear] = useState(2026)
+  const [leftMonth, setLeftMonth] = useState(8) // September
+
+  const rightYear = leftMonth === 11 ? leftYear + 1 : leftYear
+  const rightMonth = leftMonth === 11 ? 0 : leftMonth + 1
+
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setTempStart(startDate)
     setTempEnd(endDate)
+    setRangeStep("start")
   }, [startDate, endDate])
 
   useEffect(() => {
@@ -960,27 +1104,58 @@ function MapDateRangeFilter({
     }
   }, [isOpen])
 
-  const isToday = startDate === TODAY_ISO && endDate === TODAY_ISO
-  const isYesterday = startDate === "2026-10-21" && endDate === "2026-10-21"
-  const isLast7 = startDate === "2026-10-16" && endDate === TODAY_ISO
-  const isLast30 = startDate === "2026-09-22" && endDate === TODAY_ISO
-  const isLast2Months = startDate === TWO_MONTHS_AGO_ISO && endDate === TODAY_ISO
-
-  const applyPreset = (s: string, e: string) => {
-    onRangeChange(s, e)
-    setIsOpen(false)
-  }
-
-  const handleApplyCustom = () => {
-    if (tempStart && tempEnd) {
-      if (tempStart > tempEnd) {
-        onRangeChange(tempEnd, tempStart)
+  const handleDateClick = (dateIso: string) => {
+    if (rangeStep === "start") {
+      setTempStart(dateIso)
+      setTempEnd(dateIso)
+      setRangeStep("end")
+    } else {
+      if (dateIso < tempStart) {
+        setTempEnd(tempStart)
+        setTempStart(dateIso)
       } else {
-        onRangeChange(tempStart, tempEnd)
+        setTempEnd(dateIso)
       }
-      setIsOpen(false)
+      setRangeStep("start")
     }
   }
+
+  const handleDateHover = (dateIso: string) => {
+    if (rangeStep === "end") {
+      setHoverDate(dateIso)
+    }
+  }
+
+  const effStart =
+    rangeStep === "end" && hoverDate && hoverDate < tempStart ? hoverDate : tempStart
+  const effEnd =
+    rangeStep === "end" && hoverDate
+      ? hoverDate > tempStart
+        ? hoverDate
+        : tempStart
+      : tempEnd
+
+  const handlePrevMonths = () => {
+    if (leftMonth === 0) {
+      setLeftMonth(11)
+      setLeftYear((y) => y - 1)
+    } else {
+      setLeftMonth((m) => m - 1)
+    }
+  }
+
+  const handleNextMonths = () => {
+    // Cap at October 2026 for the right card (leftMonth cannot exceed 8 for Sep)
+    if (leftYear === 2026 && leftMonth >= 8) return
+    if (leftMonth === 11) {
+      setLeftMonth(0)
+      setLeftYear((y) => y + 1)
+    } else {
+      setLeftMonth((m) => m + 1)
+    }
+  }
+
+  const isToday = startDate === TODAY_ISO && endDate === TODAY_ISO
 
   const labelText = useMemo(() => {
     if (isToday) return `Today (${formatDisplayDate(TODAY_ISO)})`
@@ -988,19 +1163,21 @@ function MapDateRangeFilter({
     return `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`
   }, [isToday, startDate, endDate])
 
+  const isAtCurrentMonth = leftYear === 2026 && leftMonth >= 8
+
   return (
     <div ref={containerRef} className="absolute top-3 left-3 z-[400] flex items-center gap-1.5 select-none">
       <div className="relative">
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className={`flex items-center gap-2 rounded-lg border border-[#e4e4e4] bg-white/95 px-3 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur transition hover:bg-white hover:border-primary-300 ${
+          className={`flex items-center gap-2 rounded-lg border border-[#e4e4e4] bg-white/95 px-3 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur transition hover:bg-white hover:border-primary-300 cursor-pointer ${
             isOpen ? "ring-2 ring-primary-300 border-primary-400" : ""
           }`}
-          title="Date Range Filter (up to 2 months)"
+          title="Filter by Calendar Date Range (2 Month Cards)"
         >
           <Icon d={I.calendar} className="h-3.5 w-3.5 text-primary-500 shrink-0" />
-          <span className="font-medium text-[#1a1a1a] max-w-[170px] truncate">{labelText}</span>
+          <span className="font-medium text-[#1a1a1a] max-w-[190px] truncate">{labelText}</span>
           <span className="rounded-full bg-primary-100 px-1.5 py-0.2 text-[10.5px] font-medium text-primary-500">
             {hazardCount}
           </span>
@@ -1015,116 +1192,81 @@ function MapDateRangeFilter({
         </button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 mt-1.5 w-[290px] sm:w-[320px] rounded-xl border border-[#e4e4e4] bg-white p-3.5 shadow-xl backdrop-blur animate-in fade-in zoom-in-95 z-50">
-            <div className="flex items-center justify-between border-b border-[#e4e4e4] pb-2 mb-2.5">
-              <span className="text-xs font-medium text-[#1a1a1a]">Date Range Filter</span>
-              <span className="text-[10.5px] text-[#4b4b4b]">Max 2 Months</span>
+          <div className="absolute top-full left-0 mt-1.5 w-[530px] max-w-[calc(100vw-32px)] max-h-[85vh] overflow-y-auto rounded-2xl border border-[#e4e4e4] bg-white p-3.5 shadow-2xl backdrop-blur animate-in fade-in zoom-in-95 z-50">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#e4e4e4] pb-2 mb-3">
+              <div className="flex items-center gap-2">
+                <Icon d={I.calendar} className="h-4 w-4 text-primary-500" />
+                <span className="text-xs font-medium text-[#1a1a1a]">Select Date Range (2 Months)</span>
+              </div>
+              <span className="text-[11px] text-[#6e6e6e]">
+                {rangeStep === "end" ? "Click to set end date" : "Click to select range"}
+              </span>
             </div>
 
-            {/* Quick Presets */}
-            <div className="mb-3">
-              <div className="text-[11px] font-medium text-[#4b4b4b] mb-1.5">Quick Presets</div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => applyPreset(TODAY_ISO, TODAY_ISO)}
-                  className={`rounded-md px-2 py-1 text-xs text-left transition font-medium ${
-                    isToday
-                      ? "bg-primary-500 text-white"
-                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
-                  }`}
-                >
-                  ● Today (Default)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyPreset("2026-10-21", "2026-10-21")}
-                  className={`rounded-md px-2 py-1 text-xs text-left transition font-medium ${
-                    isYesterday
-                      ? "bg-primary-500 text-white"
-                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
-                  }`}
-                >
-                  Yesterday
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyPreset("2026-10-16", TODAY_ISO)}
-                  className={`rounded-md px-2 py-1 text-xs text-left transition font-medium ${
-                    isLast7
-                      ? "bg-primary-500 text-white"
-                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
-                  }`}
-                >
-                  Last 7 Days
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyPreset("2026-09-22", TODAY_ISO)}
-                  className={`rounded-md px-2 py-1 text-xs text-left transition font-medium ${
-                    isLast30
-                      ? "bg-primary-500 text-white"
-                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
-                  }`}
-                >
-                  Last 30 Days
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyPreset(TWO_MONTHS_AGO_ISO, TODAY_ISO)}
-                  className={`col-span-2 rounded-md px-2 py-1 text-xs text-center transition font-medium ${
-                    isLast2Months
-                      ? "bg-primary-500 text-white"
-                      : "bg-[#fafafa] text-[#2d2d2d] hover:bg-primary-50 hover:text-primary-600 border border-[#e4e4e4]"
-                  }`}
-                >
-                  Full 2 Months (22 Aug – 22 Oct 2026)
-                </button>
-              </div>
+            {/* 2 Month Cards Side-by-Side */}
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+              onMouseLeave={() => setHoverDate(null)}
+            >
+              {/* Card 1: Left Month (September 2026) */}
+              <MonthCard
+                year={leftYear}
+                month={leftMonth}
+                effStart={effStart}
+                effEnd={effEnd}
+                onDateClick={handleDateClick}
+                onDateHover={handleDateHover}
+                onPrevMonth={handlePrevMonths}
+                canPrev={true}
+              />
+
+              {/* Card 2: Right Month (October 2026) */}
+              <MonthCard
+                year={rightYear}
+                month={rightMonth}
+                effStart={effStart}
+                effEnd={effEnd}
+                onDateClick={handleDateClick}
+                onDateHover={handleDateHover}
+                onNextMonth={handleNextMonths}
+                canNext={!isAtCurrentMonth}
+              />
             </div>
 
-            {/* Custom Range Picker */}
-            <div className="pt-2 border-t border-[#e4e4e4]">
-              <div className="text-[11px] font-medium text-[#4b4b4b] mb-1.5">Custom Range (within 2 months)</div>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div>
-                  <label className="text-[10px] text-[#4b4b4b] block mb-0.5">Start Date</label>
-                  <input
-                    type="date"
-                    min={TWO_MONTHS_AGO_ISO}
-                    max={TODAY_ISO}
-                    value={tempStart}
-                    onChange={(e) => setTempStart(e.target.value)}
-                    className="w-full rounded-md border border-[#c7c7c7] bg-white px-2 py-1 text-xs text-[#1a1a1a] focus:border-primary-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-[#4b4b4b] block mb-0.5">End Date</label>
-                  <input
-                    type="date"
-                    min={tempStart || TWO_MONTHS_AGO_ISO}
-                    max={TODAY_ISO}
-                    value={tempEnd}
-                    onChange={(e) => setTempEnd(e.target.value)}
-                    className="w-full rounded-md border border-[#c7c7c7] bg-white px-2 py-1 text-xs text-[#1a1a1a] focus:border-primary-400 focus:outline-none"
-                  />
-                </div>
+            {/* Footer */}
+            <div className="mt-3.5 pt-3 border-t border-[#e4e4e4] flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-1.5 text-xs text-[#3c3c3c]">
+                <span className="font-medium text-[#1a1a1a]">Range:</span>
+                <span className="font-mono text-primary-500 font-medium bg-primary-50 border border-primary-200 px-2 py-0.5 rounded-md">
+                  {tempStart === tempEnd
+                    ? formatDisplayDate(tempStart)
+                    : `${formatDisplayDate(tempStart)} → ${formatDisplayDate(tempEnd)}`}
+                </span>
               </div>
-
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => applyPreset(TODAY_ISO, TODAY_ISO)}
-                  className="text-xs text-[#4b4b4b] hover:text-[#1a1a1a] underline"
+                  onClick={() => {
+                    setTempStart(TODAY_ISO)
+                    setTempEnd(TODAY_ISO)
+                    setRangeStep("start")
+                    onRangeChange(TODAY_ISO, TODAY_ISO)
+                    setIsOpen(false)
+                  }}
+                  className="text-xs text-[#4b4b4b] hover:text-[#1a1a1a] underline px-2 py-1 cursor-pointer"
                 >
                   Reset to Today
                 </button>
                 <button
                   type="button"
-                  onClick={handleApplyCustom}
-                  className="rounded-lg bg-primary-500 px-3 py-1 text-xs font-medium text-white transition hover:bg-primary-600"
+                  onClick={() => {
+                    onRangeChange(tempStart, tempEnd)
+                    setIsOpen(false)
+                  }}
+                  className="rounded-lg bg-primary-500 px-3.5 py-1.5 text-xs font-medium text-white transition hover:bg-primary-600 shadow-sm cursor-pointer"
                 >
-                  Apply
+                  Apply Range
                 </button>
               </div>
             </div>
@@ -1136,7 +1278,7 @@ function MapDateRangeFilter({
         <button
           type="button"
           onClick={onResetCityView}
-          className="rounded-lg border border-[#e4e4e4] bg-white/95 px-2.5 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur hover:bg-white hover:text-primary-500 transition"
+          className="rounded-lg border border-[#e4e4e4] bg-white/95 px-2.5 py-1.5 text-xs font-medium text-[#1a1a1a] shadow-sm backdrop-blur hover:bg-white hover:text-primary-500 transition cursor-pointer"
           title="Zoom out to Kanpur City View"
         >
           ↩ City View
