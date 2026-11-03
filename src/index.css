@@ -1,69 +1,288 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&family=Noto+Sans+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@700&family=Noto+Sans+Devanagari:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  /* PGR Design System — Primary (blue) */
-  --color-primary-50: #f6f8fe;
-  --color-primary-100: #dee8fc;
-  --color-primary-200: #bbcff9;
-  --color-primary-300: #2563eb;
-  --color-primary-400: #1e4fbc;
-  --color-primary-500: #163b8d;
-  --color-primary-600: #0d2352;
+  /* Core Airawat Palette */
+  --color-paper: #F5F3EC;
+  --color-ink: #111111;
 
-  /* PGR Design System — Teal/Green */
-  --color-pgr-teal-50: #eef6f5;
-  --color-pgr-teal-100: #dbece9;
-  --color-pgr-teal-200: #b5d8d1;
-  --color-pgr-teal-300: #11806a;
-  --color-pgr-teal-400: #0e6655;
-  --color-pgr-teal-500: #0a4d40;
-  --color-pgr-teal-600: #062d25;
+  /* Slate Family */
+  --color-slate-deep: #2F4E6D;
+  --color-slate: #52769A;
+  --color-slate-light: #9BB3CC;
+  --color-slate-wash: #D1D8DA;
+  --color-slate-tint: #E1E4E2;
 
-  /* PGR Design System — Yellow */
-  --color-pgr-yellow-50: #fef9f1;
-  --color-pgr-yellow-100: #fbf1d9;
-  --color-pgr-yellow-200: #f7e1b0;
-  --color-pgr-yellow-300: #e69f00;
-  --color-pgr-yellow-400: #b87f00;
-  --color-pgr-yellow-500: #8a5f00;
-  --color-pgr-yellow-600: #513800;
+  /* Rose Family */
+  --color-rose-deep: #7E4554;
+  --color-rose: #9A5B6A;
+  --color-rose-light: #C99AA2;
+  --color-rose-wash: #E1D2CF;
+  --color-rose-tint: #EAE1DC;
 
-  /* PGR Design System — Red */
-  --color-pgr-red-50: #fcf3f4;
-  --color-pgr-red-100: #f6dfe1;
-  --color-pgr-red-200: #edbcc2;
-  --color-pgr-red-300: #c62839;
-  --color-pgr-red-400: #9e202e;
-  --color-pgr-red-500: #771822;
-  --color-pgr-red-600: #450e14;
+  /* Sage Family */
+  --color-sage-dark: #4F5D50;
+  --color-sage-deep: #6F7E70;
+  --color-sage: #96A394;
+  --color-sage-wash: #E0E1D9;
+  --color-sage-tint: #EAE9E1;
 
-  /* PGR Design System — Grey */
-  --color-pgr-grey-50: #fafafa;
-  --color-pgr-grey-100: #e4e4e4;
-  --color-pgr-grey-200: #c7c7c7;
-  --color-pgr-grey-300: #4b4b4b;
-  --color-pgr-grey-400: #3c3c3c;
-  --color-pgr-grey-500: #2d2d2d;
-  --color-pgr-grey-600: #1a1a1a;
+  /* Semantic Dynamic Colors */
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-label: var(--color-text-label);
+  --color-text-accent: var(--color-text-accent);
+  --color-rule: var(--color-rule);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-focus: var(--color-focus);
+  --color-action: var(--color-action);
+  --color-on-action: var(--color-on-action);
+  --color-brand: var(--color-brand);
+  --color-on-brand: var(--color-on-brand);
+  --color-hover: var(--color-hover);
+  --color-selected: var(--color-selected);
+  --color-figure: var(--color-figure);
+  --color-scrim: rgba(17, 17, 17, 0.72);
 
-  --font-sans: 'Noto Sans', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Noto Sans Mono', ui-monospace, monospace;
+  /* Fonts */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-logo: 'Montserrat', sans-serif;
+  --font-sans: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+
+  /* Strict Radii: square by default, pill for stage tags, round for people */
+  --radius-none: 0px;
+  --radius-pill: 9999px;
+  --radius-round: 9999px;
+}
+
+:root {
+  /* Default Paper Theme */
+  --color-surface: #F5F3EC;
+  --color-surface-raised: #EFEAE1;
+  --color-surface-sunken: #EAE3D7;
+  --color-text: #111111;
+  --color-text-muted: #615A52;
+  --color-text-label: #2F4E6D;
+  --color-text-accent: #7E4554;
+  --color-rule: #111111;
+  --color-border: #D6CFC3;
+  --color-border-strong: #A99F91;
+  --color-focus: #2F4E6D;
+  --color-action: #111111;
+  --color-on-action: #F5F3EC;
+  --color-brand: #2F4E6D;
+  --color-on-brand: #F5F3EC;
+  --color-hover: #EAE3D7;
+  --color-selected: #E1E4E2;
+  --color-figure: #52769A;
+  --figure-stroke: #52769A;
+}
+
+/* Ink Theme (Dark Mode) */
+.theme-ink,
+.dark {
+  --color-surface: #111111;
+  --color-surface-raised: #1C2A38;
+  --color-surface-sunken: #0B0F14;
+  --color-text: #F5F3EC;
+  --color-text-muted: #C9D6E3;
+  --color-text-label: #9BB3CC;
+  --color-text-accent: #C99AA2;
+  --color-rule: #4A5D72;
+  --color-border: #4A5D72;
+  --color-border-strong: #7E9BB8;
+  --color-focus: #C9D6E3;
+  --color-action: #F5F3EC;
+  --color-on-action: #111111;
+  --color-brand: #9BB3CC;
+  --color-on-brand: #111111;
+  --color-hover: #2A3D51;
+  --color-selected: #2A3D51;
+  --color-figure: #F5F3EC;
+  --figure-stroke: #F5F3EC;
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: #fafafa;
-  color: #1a1a1a;
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+  margin: 0;
 }
 
-/* Strictly regular and medium font weights only — no bold or semibold anywhere */
-b, strong, th, h1, h2, h3, h4, h5, h6 {
+/* Headings use Space Grotesk, 500 weight */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
   font-weight: 500;
 }
 
-/* Pothole detection bubbles with ripple effect animation on GIS map — perfectly pinned & sticky */
+/* Gradients (All linear at 145deg) */
+.bg-grad-paper {
+  background: linear-gradient(145deg, #F8F6EF, #EAE3D7);
+}
+.bg-grad-ink {
+  background: linear-gradient(145deg, #111111, #2A2A2A);
+}
+.bg-grad-slate {
+  background: linear-gradient(145deg, #2F4E6D, #7E9BB8);
+}
+.bg-grad-rose {
+  background: linear-gradient(145deg, #7E4554, #C48A96);
+}
+.bg-grad-sage {
+  background: linear-gradient(145deg, #6F7E70, #B8C3B9);
+}
+.bg-grad-paper-slate {
+  background: linear-gradient(145deg, #F5F3EC, #52769A);
+}
+.bg-grad-paper-rose {
+  background: linear-gradient(145deg, #F5F3EC, #9A5B6A);
+}
+.bg-grad-paper-sage {
+  background: linear-gradient(145deg, #F5F3EC, #96A394);
+}
+.bg-grad-ink-slate {
+  background: linear-gradient(145deg, #111111, #52769A);
+}
+.bg-grad-slate-rose {
+  background: linear-gradient(145deg, #52769A, #9A5B6A);
+}
+.bg-grad-partner {
+  background: linear-gradient(145deg, #2F4E6D, #3A5A7B, #5F5F7B);
+}
+.bg-grad-blueprint {
+  background: linear-gradient(145deg, #111111, #1F3044, #2F4E6D);
+}
+.bg-blueprint-grid {
+  background-color: #111111;
+  background-image:
+    linear-gradient(to right, rgba(82, 118, 154, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(82, 118, 154, 0.15) 1px, transparent 1px),
+    linear-gradient(to right, rgba(82, 118, 154, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(82, 118, 154, 0.35) 1px, transparent 1px);
+  background-size: 12px 12px, 12px 12px, 60px 60px, 60px 60px;
+}
+
+/* Fine texture grain overlay */
+.grain {
+  position: relative;
+}
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Typography Utilities */
+.type-display-xl {
+  font-family: var(--font-display);
+  font-size: 46px;
+  line-height: 1.04;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.type-display-l {
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1.07;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.type-display-m {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.type-heading {
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 500;
+}
+.type-figure-xl {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 0.88;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.type-figure-m {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.type-lead {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+.type-body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+.type-body-s {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 400;
+}
+.type-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.type-caption {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.type-wordmark {
+  font-family: var(--font-logo);
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* Outlined Figures */
+.figure-outline {
+  color: transparent !important;
+  -webkit-text-stroke: 1.5px var(--figure-stroke, #52769A);
+}
+
+/* Focus Ring */
+.focus-ring:focus-visible,
+:focus-visible {
+  outline: 2px solid var(--color-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* Pothole detection bubbles on GIS map */
 .pothole-bubble-icon,
 .leaflet-div-icon.pothole-bubble-icon {
   background: transparent !important;
@@ -84,14 +303,12 @@ b, strong, th, h1, h2, h3, h4, h5, h6 {
   pointer-events: auto;
 }
 
-/* Hit area for easy clicking and hover across the bubble */
 .pothole-bubble-wrapper .bubble-hitarea {
   position: absolute;
   top: 0;
   left: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 9999px;
+  width: 44px;
+  height: 44px;
   transform: translate(-50%, -50%);
   cursor: pointer;
   pointer-events: auto;
@@ -99,168 +316,93 @@ b, strong, th, h1, h2, h3, h4, h5, h6 {
   background: transparent;
 }
 
-/* 1. Visible semi-transparent Detection Bubble / Halo on the street */
+/* Semi-transparent Detection Halo */
 .pothole-bubble-wrapper .bubble-halo {
   position: absolute;
   top: 0;
   left: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 9999px;
+  width: 42px;
+  height: 42px;
   transform: translate(-50%, -50%);
   background-color: var(--c);
-  opacity: 0.30;
+  opacity: 0.25;
   border: 1px solid var(--c);
-  box-shadow: 0 0 12px var(--c);
   pointer-events: none;
-  transition: transform 0.25s ease, opacity 0.25s ease, width 0.25s ease, height 0.25s ease;
-  animation: bubble-halo-pulse 3.2s ease-in-out infinite;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  animation: bubble-halo-pulse 3.6s ease-in-out infinite;
   animation-delay: var(--d, 0s);
   z-index: 1;
 }
 
-/* Severity-based halo dimensions */
 .pothole-bubble-wrapper.sev-high .bubble-halo {
-  width: 52px;
-  height: 52px;
-  opacity: 0.35;
-}
-.pothole-bubble-wrapper.sev-medium .bubble-halo {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   opacity: 0.32;
 }
-.pothole-bubble-wrapper.sev-low .bubble-halo {
+.pothole-bubble-wrapper.sev-medium .bubble-halo {
   width: 42px;
   height: 42px;
-  opacity: 0.30;
+  opacity: 0.26;
+}
+.pothole-bubble-wrapper.sev-low .bubble-halo {
+  width: 36px;
+  height: 36px;
+  opacity: 0.20;
 }
 
-/* 2. Concentric expanding ripple waves */
 .pothole-bubble-wrapper .bubble-ripple {
   position: absolute;
   top: 0;
   left: 0;
   width: 14px;
   height: 14px;
-  border-radius: 9999px;
-  border: 1.5px solid var(--c);
-  background-color: var(--c);
+  border: 1px solid var(--c);
+  background-color: transparent;
   transform: translate(-50%, -50%) scale(1);
   opacity: 0;
   pointer-events: none;
   z-index: 2;
-  will-change: transform, opacity;
 }
 
 .pothole-bubble-wrapper .bubble-ripple.ripple-1 {
-  animation: pothole-wave-expand 2.6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
+  animation: pothole-wave-expand 3s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
   animation-delay: var(--d, 0s);
 }
 
 .pothole-bubble-wrapper .bubble-ripple.ripple-2 {
-  animation: pothole-wave-expand 2.6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
-  animation-delay: calc(var(--d, 0s) + 0.85s);
+  animation: pothole-wave-expand 3s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
+  animation-delay: calc(var(--d, 0s) + 1s);
 }
 
-.pothole-bubble-wrapper .bubble-ripple.ripple-3 {
-  animation: pothole-wave-expand 2.6s cubic-bezier(0.1, 0.7, 0.3, 1) infinite;
-  animation-delay: calc(var(--d, 0s) + 1.7s);
-}
-
-/* 3. Center pothole marker dot with crisp white border */
+/* Center marker square dot (square by default!) */
 .pothole-bubble-wrapper .bubble-dot {
   position: absolute;
   top: 0;
   left: 0;
-  width: 13px;
-  height: 13px;
-  border-radius: 9999px;
+  width: 11px;
+  height: 11px;
   background-color: var(--c);
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+  border: 1.5px solid #F5F3EC;
   transform: translate(-50%, -50%);
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  transition: transform 0.15s ease;
   z-index: 4;
   pointer-events: auto;
 }
 
-/* Hover interactions */
 .pothole-bubble-wrapper:hover .bubble-dot {
-  transform: translate(-50%, -50%) scale(1.35);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-}
-
-.pothole-bubble-wrapper:hover .bubble-halo {
-  opacity: 0.46;
-  transform: translate(-50%, -50%) scale(1.15);
-  box-shadow: 0 0 16px var(--c);
-}
-
-/* Selected state with prominent dotted/dashed stroke outline */
-.pothole-bubble-wrapper .selected-dashed-ring {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 46px;
-  height: 46px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 6;
-  color: var(--c);
-}
-
-.pothole-bubble-wrapper.is-selected .selected-dashed-ring {
-  display: block;
-  animation: rotate-dashed-ring 14s linear infinite;
-  filter: drop-shadow(0 0 5px var(--c));
-}
-
-@keyframes rotate-dashed-ring {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
+  transform: translate(-50%, -50%) scale(1.3);
 }
 
 .pothole-bubble-wrapper.is-selected .bubble-dot {
-  width: 17px;
-  height: 17px;
-  border-width: 2.5px;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.85), 0 3px 12px rgba(0, 0, 0, 0.45);
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
-.pothole-bubble-wrapper.is-selected .bubble-halo {
-  width: 62px;
-  height: 62px;
-  opacity: 0.52;
+  width: 14px;
+  height: 14px;
   border-width: 2px;
-  box-shadow: 0 0 20px var(--c);
+  border-color: #111111;
+  outline: 2px solid var(--c);
+  outline-offset: 1px;
 }
 
-/* Minimized marker state in Overview view (Level 1) */
-.pothole-bubble-wrapper.is-minimized .bubble-halo,
-.pothole-bubble-wrapper.is-minimized .bubble-ripple {
-  display: none !important;
-}
-
-.pothole-bubble-wrapper.is-minimized .bubble-dot {
-  width: 7px;
-  height: 7px;
-  border-width: 1.5px;
-  opacity: 0.85;
-}
-
-.pothole-bubble-wrapper.is-minimized:hover .bubble-dot {
-  transform: translate(-50%, -50%) scale(1.8);
-  opacity: 1;
-}
-
-/* Road segment severity badges & pills */
+/* Road Corridor Summary Badge (Square Architectural Card) */
 .road-badge-icon,
 .leaflet-div-icon.road-badge-icon {
   background: transparent !important;
@@ -268,8 +410,6 @@ b, strong, th, h1, h2, h3, h4, h5, h6 {
   box-shadow: none !important;
   width: 0 !important;
   height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
 }
 
 .road-badge-pill {
@@ -279,155 +419,123 @@ b, strong, th, h1, h2, h3, h4, h5, h6 {
   transform: translate(-50%, -50%);
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  padding: 3px 9px;
-  border-radius: 9999px;
-  border: 1.5px solid var(--c);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  gap: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule);
+  padding: 3px 8px;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--color-text);
   white-space: nowrap;
   cursor: pointer;
   pointer-events: auto;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  border-radius: 0;
+  transition: background-color 0.15s ease;
   z-index: 50;
   user-select: none;
 }
 
 .road-badge-pill:hover {
-  transform: translate(-50%, -50%) scale(1.08);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
+  background: var(--color-surface-raised);
 }
 
 .road-badge-pill.is-focused {
-  background: #ffffff;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2.5px rgba(37, 99, 235, 0.4), 0 4px 14px rgba(0, 0, 0, 0.22);
+  background: var(--color-action);
+  color: var(--color-on-action);
+  border-color: var(--color-action);
 }
 
 .road-badge-pill .badge-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 9999px;
+  width: 6px;
+  height: 6px;
   flex-shrink: 0;
+  background: var(--c);
 }
 
 .road-badge-pill .badge-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 17px;
-  height: 17px;
   padding: 0 4px;
-  border-radius: 9999px;
-  background: var(--c);
-  color: #ffffff;
+  height: 16px;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   margin-left: 2px;
 }
 
-/* Keyframes for Ripple Effect */
+.road-badge-pill.is-focused .badge-count {
+  background: var(--color-on-action);
+  color: var(--color-action);
+}
+
 @keyframes pothole-wave-expand {
   0% {
-    width: 14px;
-    height: 14px;
-    opacity: 0.8;
+    width: 12px;
+    height: 12px;
+    opacity: 0.6;
     transform: translate(-50%, -50%) scale(0.6);
   }
-  40% {
-    opacity: 0.35;
-  }
   100% {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
     opacity: 0;
     transform: translate(-50%, -50%) scale(1.2);
   }
 }
 
-/* Keyframes for Bubble Halo breathing */
 @keyframes bubble-halo-pulse {
   0%, 100% {
     transform: translate(-50%, -50%) scale(1);
-    opacity: 0.30;
+    opacity: 0.22;
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.06);
-    opacity: 0.38;
+    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 0.32;
   }
+}
+
+/* Leaflet Container Overrides: crisp borders, no rounded corners, square controls */
+.leaflet-container {
+  font-family: var(--font-body) !important;
+}
+.leaflet-control-zoom {
+  border: 1px solid var(--color-rule) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+}
+.leaflet-control-zoom a {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  border-radius: 0 !important;
+  font-size: 14px !important;
+}
+.leaflet-control-zoom a:hover {
+  background: var(--color-hover) !important;
+}
+.leaflet-popup-content-wrapper {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-rule) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+.leaflet-popup-tip {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-rule) !important;
+  box-shadow: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pothole-bubble-wrapper .bubble-ripple,
-  .pothole-bubble-wrapper .bubble-halo,
-  .pothole-bubble-wrapper .selected-dashed-ring {
+  .pothole-bubble-wrapper .bubble-halo {
     animation: none;
   }
 }
-
-/* Dark theme — PGR Design System dark mode mappings */
-.dark .bg-white { background-color: #2d2d2d; }
-.dark .bg-white\/95 { background-color: rgb(45 45 45 / 0.95); }
-.dark .bg-\[\#fafafa\], .dark .hover\:bg-\[\#fafafa\]:hover { background-color: #1a1a1a; }
-.dark .text-\[\#1a1a1a\], .dark .hover\:text-\[\#1a1a1a\]:hover { color: #fafafa; }
-.dark .text-\[\#2d2d2d\] { color: #e4e4e4; }
-.dark .text-\[\#3c3c3c\] { color: #c7c7c7; }
-.dark .text-\[\#4b4b4b\] { color: #a1a1a1; }
-.dark .border-\[\#e4e4e4\], .dark .divide-\[\#e4e4e4\] > * { border-color: #3c3c3c; }
-.dark .border-\[\#c7c7c7\] { border-color: #4b4b4b; }
-.dark .bg-primary-50\/60, .dark .bg-primary-50\/80, .dark .bg-primary-50\/90, .dark .bg-primary-50\/70 { background-color: rgb(13 35 82 / 0.55); }
-.dark .bg-primary-100 { background-color: #0d2352; }
-.dark .border-primary-200 { border-color: #1e4fbc; }
-.dark .text-primary-500 { color: #bbcff9; }
-.dark input, .dark select { background-color: #1a1a1a; }
-
-/* Material Design Ripple Effect */
-button:not(.no-ripple),
-[role="button"]:not(.no-ripple) {
-  position: relative;
-  overflow: hidden;
-}
-
-.material-ripple {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  transform: scale(0);
-  background-color: currentColor;
-  opacity: 0.18;
-  animation: material-ripple-grow 450ms cubic-bezier(0, 0, 0.2, 1) forwards;
-  will-change: transform, opacity;
-}
-
-.material-ripple-fade-out {
-  animation: material-ripple-fade 350ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes material-ripple-grow {
-  from {
-    transform: scale(0);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-@keyframes material-ripple-fade {
-  from {
-    opacity: 0.18;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .material-ripple {
-    animation-duration: 0.01ms;
-  }
-}
-
