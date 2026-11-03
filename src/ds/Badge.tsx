@@ -72,20 +72,23 @@ export const Badge: React.FC<BadgeProps> = ({
 }
 
 export interface CountBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  value: number | string
+  value?: number | string
+  count?: number | string
   tone?: "neutral" | "critical"
   urgent?: boolean
 }
 
 export const CountBadge: React.FC<CountBadgeProps> = ({
   value,
+  count,
   tone = "neutral",
   urgent = false,
   className = "",
   ...props
 }) => {
   const isCritical = urgent || tone === "critical"
-  const displayValue = typeof value === "number" && value > 99 ? "99+" : value
+  const rawValue = count !== undefined ? count : value ?? 0
+  const displayValue = typeof rawValue === "number" && rawValue > 99 ? "99+" : rawValue
 
   return (
     <span
@@ -101,7 +104,7 @@ export const CountBadge: React.FC<CountBadgeProps> = ({
   )
 }
 
-export type StageType = "live" | "pilot" | "prototype"
+export type StageType = "live" | "pilot" | "prototype" | "Live" | "Pilot" | "Prototype"
 
 export interface StageTagProps extends React.HTMLAttributes<HTMLSpanElement> {
   stage: StageType
@@ -112,11 +115,11 @@ export interface StageTagProps extends React.HTMLAttributes<HTMLSpanElement> {
  * Used for Live, Pilot, and Prototype system indicators.
  */
 export const StageTag: React.FC<StageTagProps> = ({
-  stage,
+  stage = "live",
   className = "",
   ...props
 }) => {
-  const stageStyles: Record<StageType, { bg: string; text: string; label: string }> = {
+  const stageStyles: Record<"live" | "pilot" | "prototype", { bg: string; text: string; label: string }> = {
     live: {
       bg: "bg-slate-deep",
       text: "text-paper",
@@ -134,7 +137,8 @@ export const StageTag: React.FC<StageTagProps> = ({
     },
   }
 
-  const s = stageStyles[stage]
+  const normalized = (String(stage || "live").toLowerCase()) as "live" | "pilot" | "prototype"
+  const s = stageStyles[normalized] || stageStyles.live
 
   return (
     <span

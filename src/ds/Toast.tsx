@@ -11,7 +11,16 @@ export interface ToastItem {
   module?: string
 }
 
+export interface ToastInput {
+  title: string
+  description?: string
+  body?: string
+  tone?: StatusTone
+  module?: string
+}
+
 interface ToastContextValue {
+  toast: (item: ToastInput) => void
   push: (item: Omit<ToastItem, "id">) => void
   remove: (id: string) => void
 }
@@ -44,6 +53,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
     [remove]
   )
 
+  const toast = useCallback(
+    (input: ToastInput) => {
+      push({
+        title: input.title,
+        body: input.description || input.body,
+        tone: input.tone,
+        module: input.module,
+      })
+    },
+    [push]
+  )
+
   const toneDotColors: Record<StatusTone, string> = {
     neutral: "#C9D6E3",
     info: "#9BB3CC",
@@ -53,7 +74,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
   }
 
   return (
-    <ToastContext.Provider value={{ push, remove }}>
+    <ToastContext.Provider value={{ toast, push, remove }}>
       {children}
       {typeof document !== "undefined" &&
         createPortal(

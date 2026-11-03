@@ -102,39 +102,45 @@ export const Breadcrumbs: React.FC<{
   )
 }
 
-export interface TabItem {
-  value: string
+export interface TabItem<T extends string = string> {
+  key?: T
+  value?: T
   label: string
   count?: number | string
   disabled?: boolean
 }
 
-export interface TabsProps {
-  items: TabItem[]
-  value: string
-  onChange: (val: string) => void
+export interface TabsProps<T extends string = string> {
+  items?: TabItem<T>[]
+  tabs?: TabItem<T>[]
+  value: T
+  onChange: (val: T) => void
   variant?: "line" | "boxed"
   className?: string
 }
 
-export const Tabs: React.FC<TabsProps> = ({
+export function Tabs<T extends string = string>({
   items,
+  tabs,
   value,
   onChange,
   variant = "line",
   className = "",
-}) => {
+}: TabsProps<T>) {
+  const list = tabs || items || []
+
   if (variant === "boxed") {
     return (
       <div className={`inline-flex border border-rule bg-surface p-0.5 rounded-none ${className}`}>
-        {items.map((item) => {
-          const isSelected = item.value === value
+        {list.map((item) => {
+          const itemVal = (item.value ?? item.key) as T
+          const isSelected = itemVal === value
           return (
             <button
-              key={item.value}
+              key={itemVal}
               type="button"
               disabled={item.disabled}
-              onClick={() => onChange(item.value)}
+              onClick={() => onChange(itemVal)}
               className={`px-3 py-1.5 text-xs font-body font-medium transition-colors cursor-pointer rounded-none ${
                 isSelected
                   ? "bg-action text-on-action"
@@ -160,15 +166,16 @@ export const Tabs: React.FC<TabsProps> = ({
       role="tablist"
       className={`flex items-center gap-6 border-b border-rule select-none ${className}`}
     >
-      {items.map((item) => {
-        const isSelected = item.value === value
+      {list.map((item) => {
+        const itemVal = (item.value ?? item.key) as T
+        const isSelected = itemVal === value
         return (
           <button
-            key={item.value}
+            key={itemVal}
             role="tab"
             aria-selected={isSelected}
             disabled={item.disabled}
-            onClick={() => onChange(item.value)}
+            onClick={() => onChange(itemVal)}
             className={`relative pb-2.5 text-xs font-body font-medium transition-colors cursor-pointer ${
               isSelected ? "text-text" : "text-text-muted hover:text-text"
             } ${item.disabled ? "opacity-30 cursor-not-allowed" : ""}`}

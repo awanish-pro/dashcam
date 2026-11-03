@@ -6,8 +6,10 @@ export interface EmptyStateProps {
   label?: string
   title: string
   accent?: string
-  body: string
+  body?: string
   actions?: React.ReactNode
+  actionLabel?: string
+  onAction?: () => void
   className?: string
 }
 
@@ -17,6 +19,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   accent,
   body,
   actions,
+  actionLabel,
+  onAction,
   className = "",
 }) => {
   return (
@@ -28,10 +32,25 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <Display size="m" accent={accent} className="max-w-md">
         {title}
       </Display>
-      <Text size="body-s" muted className="max-w-sm">
-        {body}
-      </Text>
-      {actions && <div className="pt-2 flex items-center gap-2">{actions}</div>}
+      {body && (
+        <Text size="body-s" muted className="max-w-sm">
+          {body}
+        </Text>
+      )}
+      {(actions || (actionLabel && onAction)) && (
+        <div className="pt-2 flex items-center gap-2">
+          {actions}
+          {actionLabel && onAction && (
+            <button
+              type="button"
+              onClick={onAction}
+              className="px-4 py-2 border border-rule bg-surface hover:bg-hover text-xs font-mono font-medium text-text transition-colors cursor-pointer"
+            >
+              {actionLabel}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import React from "react"
 
 export interface DisplayProps extends React.HTMLAttributes<HTMLHeadingElement> {
-  size?: "xl" | "l" | "m" | "heading"
+  size?: "xl" | "l" | "m" | "heading" | "lg"
   accent?: string
   as?: "h1" | "h2" | "h3" | "h4" | "div"
 }
@@ -17,6 +17,7 @@ export const Display: React.FC<DisplayProps> = ({
   const sizeClasses = {
     xl: "type-display-xl",
     l: "type-display-l",
+    lg: "type-display-l",
     m: "type-display-m",
     heading: "type-heading",
   }[size]
@@ -123,15 +124,18 @@ export const Figure: React.FC<FigureProps> = ({
 }
 
 export const RunningHead: React.FC<{
-  left: string
+  left?: string
   right?: string
+  code?: string
+  label?: string
   className?: string
-}> = ({ left, right = "Airawat OS", className = "" }) => {
+}> = ({ left, right = "Airawat OS", code, label, className = "" }) => {
+  const leftText = left || (code ? `${code} · ${label}` : label || "")
   return (
     <div
       className={`flex items-center justify-between border-b border-rule pb-2 mb-4 select-none ${className}`}
     >
-      <Label>{left}</Label>
+      <Label>{leftText}</Label>
       {right && <Caption>{right}</Caption>}
     </div>
   )

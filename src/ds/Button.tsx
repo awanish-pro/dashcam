@@ -83,7 +83,7 @@ export const Button: React.FC<ButtonProps> = ({
 export interface IconButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   glyph: GlyphName
-  label: string
+  label?: string
   size?: "sm" | "md" | "lg"
   variant?: "ghost" | "secondary"
 }
@@ -94,6 +94,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   size = "sm",
   variant = "ghost",
   className = "",
+  title,
   ...props
 }) => {
   const sizeMap = {
@@ -108,11 +109,13 @@ export const IconButton: React.FC<IconButtonProps> = ({
     secondary: "bg-surface text-text border border-rule hover:bg-hover",
   }
 
+  const resolvedLabel = label || title || String(glyph)
+
   return (
     <button
       type="button"
-      title={label}
-      aria-label={label}
+      title={resolvedLabel}
+      aria-label={resolvedLabel}
       className={`inline-flex items-center justify-center rounded-none transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed focus-ring ${sizeMap[size]} ${variantStyles[variant]} ${className}`}
       {...props}
     >
@@ -121,14 +124,17 @@ export const IconButton: React.FC<IconButtonProps> = ({
   )
 }
 
-export interface ButtonGroupOption<T extends string = string> {
-  value: T
+export interface ButtonGroupItem<T extends string = string> {
+  key?: T
+  value?: T
   label: string
   count?: number | string
+  icon?: GlyphName
 }
 
 export interface ButtonGroupProps<T extends string = string> {
-  options: ButtonGroupOption<T>[]
+  items?: ButtonGroupItem<T>[]
+  options?: ButtonGroupItem<T>[]
   value: T
   onChange: (val: T) => void
   label?: string
@@ -137,6 +143,7 @@ export interface ButtonGroupProps<T extends string = string> {
 }
 
 export function ButtonGroup<T extends string = string>({
+  items,
   options,
   value,
   onChange,
@@ -144,21 +151,24 @@ export function ButtonGroup<T extends string = string>({
   size = "sm",
   className = "",
 }: ButtonGroupProps<T>) {
+  const list = items || options || []
+
   return (
     <div
       role="radiogroup"
       aria-label={label}
       className={`inline-flex items-center border border-rule bg-surface p-0.5 rounded-none ${className}`}
     >
-      {options.map((opt) => {
-        const isSelected = opt.value === value
+      {list.map((item) => {
+        const itemVal = (item.value ?? item.key) as T
+        const isSelected = itemVal === value
         return (
           <button
-            key={opt.value}
+            key={itemVal}
             type="button"
             role="radio"
             aria-checked={isSelected}
-            onClick={() => onChange(opt.value)}
+            onClick={() => onChange(itemVal)}
             className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium font-body transition-colors cursor-pointer rounded-none select-none ${
               size === "sm" ? "h-7" : "h-9 px-4"
             } ${
@@ -167,14 +177,15 @@ export function ButtonGroup<T extends string = string>({
                 : "text-text hover:bg-hover"
             }`}
           >
-            <span>{opt.label}</span>
-            {opt.count !== undefined && (
+            {item.icon && <Glyph name={item.icon} size={12} />}
+            <span>{item.label}</span>
+            {item.count !== undefined && (
               <span
                 className={`text-[10px] font-mono px-1 ${
                   isSelected ? "bg-surface text-text" : "text-text-muted"
                 }`}
               >
-                {opt.count}
+                {item.count}
               </span>
             )}
           </button>
