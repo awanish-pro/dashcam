@@ -1694,22 +1694,6 @@ function DetectionPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header (Airawat Running Head & Headline with Closing Accent) */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-rule pb-5">
-        <div>
-          <RunningHead code="01" label="HAZARD LEDGER · KANPUR NAGAR NIGAM" />
-          <Display size="lg" accent="across municipal corridors." className="mt-1">
-            Real-time hazard detection and pothole ledger
-          </Display>
-        </div>
-        <div className="flex items-center gap-2">
-          <StageTag stage="Live" />
-          <span className="font-mono text-xs text-text-muted">
-            SYNCED: 22 OCT 2026, 17:02 IST
-          </span>
-        </div>
-      </div>
-
       {/* 4 Metric Cards (Airawat Section 7.2 Specification) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
@@ -2237,14 +2221,8 @@ function UsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-rule pb-5">
-        <div>
-          <RunningHead code="02" label="MUNICIPAL WORKFORCE · KANPUR NAGAR NIGAM" />
-          <Display size="lg" accent="for field operations." className="mt-1">
-            Employees, status and ward/zone assignment
-          </Display>
-        </div>
+      {/* Tabs Header */}
+      <div className="flex items-center justify-between border-b border-rule pb-2">
         <Tabs<"status" | "assign">
           variant="line"
           value={tab}
